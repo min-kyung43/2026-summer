@@ -43,6 +43,9 @@ References:
 - sci-fi system startup
 - low brightness
 - minimalist storytelling
+- premium mobile onboarding
+- soft cinematic glow
+- restored archive app surface
 
 ---
 
@@ -72,6 +75,7 @@ min-height: 100vh;
   --bg-black: #000000;
   --bg-screen: #020406;
   --bg-surface: #07090C;
+  --bg-surface-soft: #0B0F14;
 
   --text-primary: #D7DEE8;
   --text-secondary: #8A929F;
@@ -82,10 +86,38 @@ min-height: 100vh;
   --accent-green: #9AF0C3;
   --accent-lime: #C9FF3D;
   --accent-blue: #9DDFFF;
+  --accent-purple: #A970FF;
+  --accent-mint: #8EF5D4;
 
   --success: #9AF0C3;
+
+  --glow-blue: rgba(85, 138, 255, 0.22);
+  --glow-purple: rgba(169, 112, 255, 0.18);
+  --glow-mint: rgba(142, 245, 212, 0.16);
+  --glow-lime: rgba(201, 255, 61, 0.14);
+
+  --gradient-top-glow:
+    radial-gradient(circle at 50% 0%, rgba(157,223,255,0.20) 0%, rgba(157,223,255,0.00) 42%),
+    radial-gradient(circle at 20% 8%, rgba(169,112,255,0.14) 0%, rgba(169,112,255,0.00) 36%);
+
+  --gradient-card-surface:
+    linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.00) 100%),
+    radial-gradient(circle at top right, rgba(157,223,255,0.10) 0%, rgba(157,223,255,0.00) 42%),
+    radial-gradient(circle at bottom left, rgba(169,112,255,0.08) 0%, rgba(169,112,255,0.00) 38%),
+    #07090C;
+
+  --gradient-button-glow:
+    linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.00) 100%),
+    var(--accent-green);
 }
 ```
+
+Direction:
+
+- Keep the overall screen black-first and archive-focused.
+- Add soft glow only as a supporting atmosphere, not as a dominant colorful layer.
+- Use blue, purple, mint, and lime as faint recovery light, never as loud UI chrome.
+- Avoid flat pure-black cards with no depth; surfaces should feel restored, cold, and slightly luminous.
 
 ---
 
@@ -193,6 +225,21 @@ padding-right: 24px;
 ●━━━━○○○
 
 터치하여 계속
+```
+
+Visual Atmosphere:
+
+- Maintain a pure black archive mood.
+- Add a soft glow wash near the top area of the screen.
+- The glow should feel cinematic and premium, not playful.
+- Glow must stay blurred, low contrast, and partially hidden by darkness.
+
+Suggested Background Layer:
+
+```css
+background:
+  var(--gradient-top-glow),
+  linear-gradient(180deg, var(--bg-screen), var(--bg-surface));
 ```
 
 ---
@@ -398,7 +445,7 @@ height: 48px;
 border: none;
 border-radius: 8px;
 
-background: var(--accent-green);
+background: var(--gradient-button-glow);
 
 color: #00160A;
 
@@ -406,6 +453,10 @@ font-family: "DM Mono";
 font-size: 10px;
 font-weight: 700;
 letter-spacing: 0.28em;
+
+box-shadow:
+  0 0 0 1px rgba(0, 22, 10, 0.12),
+  0 0 24px rgba(154, 240, 195, 0.14);
 ```
 
 Button Label
@@ -413,6 +464,114 @@ Button Label
 ```txt
 [ START ]
 ```
+
+Button Direction:
+
+- Keep the existing mint identity.
+- Add only a subtle soft glow, not a glossy or neon effect.
+- The button should feel like an approved access control, not a game CTA.
+
+---
+
+# Archive System Home
+
+## Mood
+
+- restored archive hub
+- quiet mobile interface
+- premium dark surface
+- locked file cabinet energy
+- soft atmospheric light
+
+Important:
+
+- Do not turn this into a dashboard or admin console.
+- Do not add tables, charts, sidebars, or complex system widgets.
+- This is a mobile archive app surface, not a control room.
+
+## Archive Card Style
+
+Archive cards should feel like sealed records that still hold faint recovered light.
+
+```css
+border: 1px solid rgba(255,255,255,0.08);
+border-radius: 12px;
+background: var(--gradient-card-surface);
+box-shadow: none;
+```
+
+Hover / Focus:
+
+```css
+box-shadow:
+  0 0 18px rgba(154, 240, 195, 0.08),
+  0 0 30px rgba(157, 223, 255, 0.04);
+```
+
+Direction:
+
+- No heavy shadows.
+- No bright neon outline.
+- Use a dark gradient surface with very subtle internal light.
+- Cards should look slightly colder and more premium than a flat black rectangle.
+- Each card should feel like a locked file containing dormant signal residue.
+
+## Locked State
+
+Locked cards should still look beautiful, but quieter.
+
+```css
+opacity: 0.5;
+color: var(--text-muted);
+```
+
+Locked Style Rules:
+
+- Keep the gradient surface, but reduce its visibility.
+- Show a lock indicator or locked system label.
+- Text should appear dimmed rather than disabled in a cheap UI sense.
+- The card should feel inaccessible, not inactive.
+
+## Unlocked State
+
+Only `ARCHIVE #01` is available at first.
+
+Use:
+
+```css
+color: var(--text-primary);
+```
+
+Status Highlight:
+
+```css
+color: var(--success);
+```
+
+Unlocked Direction:
+
+- Slightly clearer text contrast
+- Slightly more visible glow response on tap / hover
+- Still restrained and minimal
+
+## Archive Surface Background
+
+The archive hub should remain black overall, but it should not feel empty.
+
+Suggested screen treatment:
+
+```css
+background:
+  radial-gradient(circle at 50% -10%, rgba(157,223,255,0.16) 0%, rgba(157,223,255,0) 38%),
+  radial-gradient(circle at 80% 0%, rgba(169,112,255,0.10) 0%, rgba(169,112,255,0) 32%),
+  #000000;
+```
+
+Direction:
+
+- Keep the archive mood dominant.
+- Let the glow feel like hidden restored energy behind the interface.
+- Never let the screen become bright, colorful, or glossy.
 
 ---
 
@@ -440,6 +599,16 @@ Recommended delay:
 
 between each line.
 
+Archive cards should fade in sequentially.
+
+Recommended delay:
+
+```css
+300ms between cards
+```
+
+Do not animate cards with bounce, scale pop, or flashy motion.
+
 ---
 
 # Development Rules
@@ -459,6 +628,13 @@ Do NOT use:
 Create custom components only.
 
 Keep implementation visually identical to the Figma onboarding screens.
+
+When updating visual polish, preserve:
+
+- Pretendard for Korean content
+- DM Mono for system labels
+- black archive atmosphere
+- restrained interface density
 
 Priority:
 
