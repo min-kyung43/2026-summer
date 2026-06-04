@@ -176,6 +176,38 @@
   display: flex;
   align-items: flex-end;
   padding-bottom: 78px;
+  overflow: hidden;
+}
+
+.boot-screen::before,
+.boot-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.boot-screen::before {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025) 0,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%);
+  opacity: 0.32;
+  mix-blend-mode: screen;
+  animation: bootNoise 4.5s steps(2, end) infinite;
+}
+
+.boot-screen::after {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(157, 223, 255, 0.1), transparent 26%),
+    radial-gradient(circle at 50% 60%, rgba(154, 240, 195, 0.08), transparent 28%);
+  opacity: 0.7;
+  animation: bootBloom 3.8s ease-in-out infinite;
 }
 
 .team-select-screen {
@@ -228,13 +260,17 @@
 }
 
 .team-select-description {
-  max-width: 250px;
+  width: 100%;
+  max-width: none;
   margin: 12px 0 28px;
   font-family: var(--font-story);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 300;
-  line-height: 1.8;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .team-option-grid {
@@ -331,11 +367,16 @@
 
 .tone-blue.is-visible,
 .tone-green.is-visible {
-  text-shadow: 0 0 14px rgba(157, 223, 255, 0.1);
+  text-shadow:
+    0 0 8px rgba(157, 223, 255, 0.18),
+    0 0 18px rgba(157, 223, 255, 0.08);
+  animation: bootFlicker 2.2s steps(2, end) infinite;
 }
 
 .tone-green.is-visible {
-  text-shadow: 0 0 14px rgba(154, 240, 195, 0.12);
+  text-shadow:
+    0 0 8px rgba(154, 240, 195, 0.2),
+    0 0 18px rgba(154, 240, 195, 0.1);
 }
 
 .reveal {
@@ -361,6 +402,10 @@
 .final-panel.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.final-panel.is-visible .divider {
+  animation: bootDividerGlow 2.4s ease-in-out infinite;
 }
 
 .divider {
@@ -398,6 +443,10 @@
   box-shadow: 0 0 0 1px rgba(0, 22, 10, 0.12);
 }
 
+.start-button {
+  animation: bootButtonPulse 3.2s ease-in-out infinite;
+}
+
 .start-button:focus-visible,
 .story-screen:focus-visible {
   outline: 1px solid rgba(154, 240, 195, 0.75);
@@ -425,7 +474,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  overflow: hidden auto;
+  height: 100%;
+  overflow-y: auto;
   isolation: isolate;
   padding-top: 42px;
   padding-bottom: 118px;
@@ -567,7 +617,7 @@
 .home-signal-message {
   position: relative;
   z-index: 1;
-  padding: 6px 2px 4px;
+  padding: 6px 2px 16px;
 }
 
 .home-signal-copy {
@@ -1288,6 +1338,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-bottom: 16px;
 }
 
 .archive-card {
@@ -1567,7 +1618,7 @@
 
 .admin-team-card {
   position: relative;
-  min-height: 118px;
+  min-height: 172px;
   padding: 17px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.13);
@@ -1589,6 +1640,62 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.admin-team-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.admin-team-location {
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-team-location span,
+.admin-team-progress-copy {
+  color: var(--text-muted);
+  font-family: var(--font-story);
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.admin-team-location strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-story);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.admin-team-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-team-progress-track {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-team-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(157, 223, 255, 0.95), rgba(154, 240, 195, 0.95));
+  box-shadow: 0 0 16px rgba(157, 223, 255, 0.22);
 }
 
 .admin-team-metrics {
@@ -1762,6 +1869,73 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bootFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  47% {
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.68;
+  }
+
+  53% {
+    opacity: 1;
+  }
+}
+
+@keyframes bootNoise {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+
+  50% {
+    opacity: 0.42;
+  }
+}
+
+@keyframes bootBloom {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes bootDividerGlow {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: scaleX(1);
+  }
+
+  50% {
+    opacity: 0.78;
+    transform: scaleX(1.01);
+  }
+}
+
+@keyframes bootButtonPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(0, 22, 10, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 0 0 1px rgba(0, 22, 10, 0.12), 0 0 24px rgba(154, 240, 195, 0.14);
   }
 }
 

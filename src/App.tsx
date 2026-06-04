@@ -43,6 +43,7 @@ const archives = [
 const teamOptions = ['1조', '2조', '3조', '4조', '5조', '6조', '7조'] as const
 const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
+const firstArchiveQrValue = 'ARCHIVE-01-NEXT'
 
 type Phase =
   | 'story'
@@ -141,6 +142,10 @@ function createFallbackTeamRecord(teamName: TeamOption): TeamRecord {
 
 function getStageId(stage: number) {
   return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
+}
+
+function getArchiveByStage(stage: number) {
+  return archives[Math.max(0, Math.min(stage - 1, archives.length - 1))]
 }
 
 type AdminDashboardProps = {
@@ -252,12 +257,31 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
               <article className="admin-team-card" key={row.id}>
                 <div className="admin-team-card-header">
                   <div>
-                    <p className="admin-team-name">{row.team_name}</p>
-                    <p className="admin-stage">ARCHIVE #{getStageId(row.current_stage)}</p>
+                    <p className="admin-team-name">{row.team_name} - 진행 상황</p>
+                    <p className="admin-stage">
+                      현재 기록 · ARCHIVE #{getStageId(row.current_stage)}
+                    </p>
                   </div>
                   <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
                     {row.is_finished ? '완료' : '진행 중'}
                   </span>
+                </div>
+                <div className="admin-team-body">
+                  <div className="admin-team-location">
+                    <span>현재 위치</span>
+                    <strong>{getArchiveByStage(row.current_stage).name}</strong>
+                  </div>
+                  <div className="admin-team-progress">
+                    <div className="admin-team-progress-track" aria-hidden="true">
+                      <span
+                        className="admin-team-progress-fill"
+                        style={{ width: `${Math.max(14, Math.min(100, (row.completed_count / archives.length) * 100))}%` }}
+                      />
+                    </div>
+                    <p className="admin-team-progress-copy">
+                      진행 단계 {Math.min(row.current_stage, archives.length)} / {archives.length}
+                    </p>
+                  </div>
                 </div>
                 <div className="admin-team-metrics">
                   <div>
@@ -361,6 +385,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     return () => {
       timers.forEach((timer) => window.clearTimeout(timer))
       window.clearTimeout(finishTimer)
+    }
+  }, [phase])
+
+  useEffect(() => {
+    if (phase === 'step-intro') {
+      setQrScannerStatus('idle')
+      setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
     }
   }, [phase])
 
@@ -494,7 +525,12 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             return
           }
 
-          // Later we can compare result.getText() with a specific expected QR value.
+          if (result.getText() !== firstArchiveQrValue) {
+            setQrScannerStatus('error')
+            setQrScannerMessage('본당 QR만 인식할 수 있습니다.')
+            return
+          }
+
           qrScannerControlsRef.current.stop()
           qrScannerControlsRef.current = null
           setQrScannerStatus('found')
@@ -639,7 +675,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <header className="home-header reveal-soft">
               <div>
                 <p className="home-app-name">사라진 빛을 찾아서</p>
-                <h1 className="home-title">기록 보관소</h1>
+                <h1 className="home-title">접속이 복구되었습니다.</h1>
                 <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
               <div className="home-actions" aria-label="빠른 메뉴">
