@@ -208,10 +208,6 @@
   width: 100%;
 }
 
-.team-code-panel {
-  position: relative;
-}
-
 .team-select-kicker {
   margin: 0 0 12px;
   font-family: var(--font-mono);
@@ -284,17 +280,6 @@
 .team-admin-secret {
   opacity: 0;
   box-shadow: none;
-}
-
-.team-code-panel > .team-admin-secret {
-  position: absolute;
-  top: -14px;
-  right: -14px;
-  width: 48px;
-  height: 48px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
 }
 
 .team-admin-secret:hover,
@@ -439,10 +424,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   overflow: hidden auto;
   isolation: isolate;
-  padding-top: 58px;
+  padding-top: 42px;
   padding-bottom: 118px;
   --signal-shift-x: 0px;
   --signal-shift-y: 0px;
@@ -498,7 +483,7 @@
 .home-title {
   margin: 0;
   font-family: var(--font-story);
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 500;
   line-height: 1.18;
   letter-spacing: 0;
@@ -540,16 +525,16 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
 .home-card {
   position: relative;
-  min-height: 132px;
-  padding: 18px;
+  min-height: 118px;
+  padding: 16px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 26px;
+  border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 70%),
     radial-gradient(circle at 84% 0%, rgba(157, 187, 255, 0.12), transparent 44%),
@@ -574,8 +559,55 @@
   pointer-events: none;
 }
 
+.home-card-signal,
+.home-card-now,
+.home-card-mini {
+  grid-column: 1 / -1;
+}
+
+.home-card-signal {
+  min-height: 102px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-color: rgba(157, 223, 255, 0.18);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(157, 223, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 0%, rgba(154, 240, 195, 0.12), transparent 32%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 58%),
+    #141719;
+  box-shadow:
+    0 0 32px rgba(157, 223, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -24px 54px rgba(0, 0, 0, 0.28);
+}
+
+.home-card-signal::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 18px rgba(154, 240, 195, 0.55);
+}
+
+.home-signal-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 280px;
+  margin: 17px 0 0;
+  color: #f3f7fb;
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.65;
+}
+
 .home-card-primary {
-  min-height: 154px;
+  min-height: 138px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -585,27 +617,22 @@
 }
 
 .home-card-progress {
-  min-height: 154px;
+  min-height: 138px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
 }
 
-.home-card-now,
-.home-card-mini {
-  grid-column: 1 / -1;
-}
-
 .home-card-now {
-  min-height: 166px;
+  min-height: 176px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 22px 20px 20px;
-  border-color: rgba(232, 241, 255, 0.2);
+  padding: 21px 20px 18px;
+  border-color: rgba(232, 241, 255, 0.25);
   background:
-    radial-gradient(circle at 82% 14%, rgba(232, 241, 255, 0.24), transparent 30%),
+    radial-gradient(circle at 82% 14%, rgba(232, 241, 255, 0.27), transparent 30%),
     radial-gradient(circle at 12% 110%, rgba(154, 240, 195, 0.14), transparent 36%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.075), transparent 54%),
     #181818;
@@ -649,15 +676,16 @@
   border-radius: 999px;
   background: rgba(154, 240, 195, 0.12);
   color: var(--success);
-  font-family: var(--font-story);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 9px;
   font-weight: 400;
   line-height: 1;
+  letter-spacing: 0.08em;
 }
 
 .home-now-body {
   display: block;
-  margin: 18px 0 20px;
+  margin: 14px 0 16px;
 }
 
 .home-now-location {
@@ -673,32 +701,42 @@
   margin: 0;
   font-family: var(--font-story);
   color: #f7fbff;
-  font-size: 24px;
+  font-size: 29px;
   font-weight: 500;
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
+}
+
+.home-now-description {
+  max-width: 230px;
+  margin: 9px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-story);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.65;
 }
 
 .home-now-action {
   position: relative;
   z-index: 1;
-  min-height: 42px;
+  min-height: 45px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   background: #e8f1ff;
   color: #050505;
   font-family: var(--font-story);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1;
   box-shadow:
-    0 0 24px rgba(157, 187, 255, 0.18),
+    0 0 30px rgba(157, 187, 255, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.46);
 }
 
 .home-card-mini {
-  min-height: 96px;
+  min-height: 88px;
 }
 
 .home-card-label {
@@ -750,24 +788,20 @@
   color: var(--success);
 }
 
-.home-progress-ring {
+.home-progress-value {
   position: relative;
-  width: 58px;
-  height: 58px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle, #171717 58%, transparent 60%),
-    conic-gradient(#e8f1ff 0deg, rgba(255, 255, 255, 0.12) 0deg 360deg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  z-index: 1;
+  margin: 7px 0 0;
+  font-family: var(--font-mono);
+  color: #f7fbff;
+  font-size: 29px;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
-.home-progress-ring span {
-  font-family: var(--font-mono);
-  color: #e8f1ff;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+.home-progress-value span {
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .home-progress-bar {
@@ -794,6 +828,18 @@
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+}
+
+.home-team-step {
+  position: absolute;
+  z-index: 1;
+  right: 16px;
+  bottom: 16px;
+  margin: 0;
+  color: #f7fbff;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .home-bottom-nav {

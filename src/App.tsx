@@ -1,5 +1,5 @@
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { supabase, type TeamRecord } from './supabase'
 
@@ -45,7 +45,6 @@ const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 
 type Phase =
-  | 'team-code'
   | 'story'
   | 'boot'
   | 'ready'
@@ -66,7 +65,6 @@ type AppSession = {
 }
 
 const validPhases = new Set<Phase>([
-  'team-code',
   'story',
   'boot',
   'ready',
@@ -115,12 +113,30 @@ function isAdminUnlocked() {
   }
 }
 
-function getStageId(stage: number) {
-  return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
+function getTeamCodeForOption(teamName: TeamOption) {
+  const teamIndex = teamOptions.indexOf(teamName) + 1
+
+  return `TEAM${String(teamIndex).padStart(2, '0')}`
 }
 
-function normalizeTeamCode(teamCode: string) {
-  return teamCode.trim().toUpperCase()
+function createFallbackTeamRecord(teamName: TeamOption): TeamRecord {
+  const teamCode = getTeamCodeForOption(teamName)
+
+  return {
+    id: teamCode,
+    team_name: teamName,
+    team_code: teamCode,
+    current_stage: 1,
+    completed_count: 0,
+    hint_count: 0,
+    is_finished: false,
+    started_at: new Date().toISOString(),
+    finished_at: null,
+  }
+}
+
+function getStageId(stage: number) {
+  return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
 }
 
 function AdminDashboard() {
@@ -261,20 +277,12 @@ type OnboardingAppProps = {
 
 function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [storedSession] = useState(() => loadStoredSession())
-  const [phase, setPhase] = useState<Phase>(
-    storedSession.activeTeam ? storedSession.phase ?? 'archive-home' : 'team-code',
-  )
-  const [storyIndex, setStoryIndex] = useState(() =>
-    Math.min(storedSession.storyIndex ?? 0, storySlides.length - 1),
-  )
+  const [phase, setPhase] = useState<Phase>('story')
+  const [storyIndex, setStoryIndex] = useState(0)
   const [visibleBootLines, setVisibleBootLines] = useState(0)
-  const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(
-    storedSession.selectedTeam ?? null,
-  )
-  const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(storedSession.activeTeam ?? null)
-  const [teamCodeInput, setTeamCodeInput] = useState('')
-  const [teamCodeError, setTeamCodeError] = useState('')
-  const [isTeamLoading, setIsTeamLoading] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(null)
+  const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(null)
+  const [isTeamSelectLoading, setIsTeamSelectLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
   const [, setSecretAdminTapCount] = useState(0)
   const [qrScannerStatus, setQrScannerStatus] = useState<'idle' | 'scanning' | 'found' | 'error'>(
@@ -384,41 +392,27 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setPhase('team-select')
   }
 
-  const handleTeamCodeSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleTeamSelect = async (teamName: TeamOption) => {
+    const teamCode = getTeamCodeForOption(teamName)
 
-    const teamCode = normalizeTeamCode(teamCodeInput)
-
-    if (!teamCode) {
-      setTeamCodeError('팀 코드를 입력해주세요.')
-      return
-    }
-
-    setIsTeamLoading(true)
-    setTeamCodeError('')
-
-    const { data, error } = await supabase
-      .from('teams')
-      .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
-      .eq('team_code', teamCode)
-      .maybeSingle()
-
-    setIsTeamLoading(false)
-
-    if (error || !data) {
-      setTeamCodeError('팀 코드를 확인할 수 없습니다. TEAM01~TEAM07을 입력해주세요.')
-      return
-    }
-
-    setActiveTeam(data)
-    setSelectedTeam(null)
-    setTeamCodeInput('')
-    setPhase('archive-home')
-  }
-
-  const handleTeamSelect = (teamName: (typeof teamOptions)[number]) => {
+    setIsTeamSelectLoading(true)
     setSelectedTeam(teamName)
+    setActiveTeam(createFallbackTeamRecord(teamName))
     setPhase('archive-home')
+
+    try {
+      const { data } = await supabase
+        .from('teams')
+        .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+        .eq('team_code', teamCode)
+        .maybeSingle()
+
+      if (data) {
+        setActiveTeam(data)
+      }
+    } finally {
+      setIsTeamSelectLoading(false)
+    }
   }
 
   const handleSecretAdminTap = () => {
@@ -515,39 +509,6 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     <main className="app-shell">
       <div className="screen-frame">
         <div className="screen-overlay" aria-hidden="true" />
-
-        {phase === 'team-code' ? (
-          <section className="team-code-screen">
-            <form className="team-code-panel reveal-soft" onSubmit={handleTeamCodeSubmit}>
-              <p className="team-select-kicker">TEAM ACCESS REQUIRED</p>
-              <h1 className="team-select-title">팀 코드를 입력하세요</h1>
-              <p className="team-select-description">
-                담당자에게 받은 TEAM01~TEAM07 코드를 입력하면 기록 보관소에 접속합니다.
-              </p>
-              <label className="team-code-field">
-                <span>TEAM CODE</span>
-                <input
-                  value={teamCodeInput}
-                  onChange={(event) => setTeamCodeInput(event.target.value.toUpperCase())}
-                  placeholder="TEAM01"
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  inputMode="text"
-                />
-              </label>
-              {teamCodeError ? <p className="team-code-error">{teamCodeError}</p> : null}
-              <button type="submit" className="start-button team-code-submit" disabled={isTeamLoading}>
-                {isTeamLoading ? '[ CHECKING ]' : '[ ENTER ]'}
-              </button>
-              <button
-                type="button"
-                className="team-admin-secret"
-                onClick={handleSecretAdminTap}
-                aria-label="관리자 숨은 진입"
-              />
-            </form>
-          </section>
-        ) : null}
 
         {phase === 'story' ? (
           <button
@@ -646,14 +607,16 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                     key={teamName}
                     type="button"
                     className="team-option-button"
+                    disabled={isTeamSelectLoading}
                     onClick={() => handleTeamSelect(teamName)}
                   >
-                    {teamName}
+                    {isTeamSelectLoading ? '접속 중' : teamName}
                   </button>
                 ))}
                 <button
                   type="button"
                   className="team-option-button team-admin-secret"
+                  disabled={isTeamSelectLoading}
                   onClick={handleSecretAdminTap}
                   aria-label="관리자 숨은 진입"
                 />
@@ -678,6 +641,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </header>
 
             <div className="home-card-grid">
+              <section className="home-card home-card-signal reveal-soft" aria-label="시스템 메시지">
+                <p className="home-card-label">LAST SIGNAL FOUND</p>
+                <p className="home-signal-copy">
+                  "...빛은 아직 완전히 사라지지 않았다."
+                </p>
+              </section>
+
               <button
                 type="button"
                 className="home-card home-card-now reveal-soft"
@@ -685,16 +655,30 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               >
                 <div className="home-now-header">
                   <span className="home-card-label">CURRENT OBJECTIVE</span>
-                  <span className="home-now-badge">진행 중</span>
+                  <span className="home-now-badge">조사 필요</span>
                 </div>
                 <div className="home-now-body">
                   <div>
                     <p className="home-now-location">현재 위치</p>
                     <h2 className="home-now-title">본당</h2>
+                    <p className="home-now-description">
+                      복구 가능한 기록이 발견되었습니다.
+                    </p>
                   </div>
                 </div>
-                <span className="home-now-action">첫 번째 기록 열기</span>
+                <span className="home-now-action">조사 시작</span>
               </button>
+
+              <section className="home-card home-card-progress reveal-soft">
+                <p className="home-card-label">RESTORED RECORDS</p>
+                <p className="home-progress-value">
+                  0 <span>/ 7</span>
+                </p>
+                <p className="home-card-title">복구된 기록</p>
+                <div className="home-progress-bar" aria-hidden="true">
+                  <span />
+                </div>
+              </section>
 
               <button
                 type="button"
@@ -704,24 +688,15 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 <span className="home-card-label">ARCHIVE #01</span>
                 <strong className="home-mission-number">01</strong>
                 <span className="home-card-title">첫 번째 기록</span>
-                <span className="home-card-meta">본당 기록 복구 가능</span>
-                <span className="home-card-status">탭하여 시작</span>
+                <span className="home-card-meta">위치  본당</span>
+                <span className="home-card-status">상태  복구 가능</span>
               </button>
 
-              <section className="home-card home-card-progress reveal-soft">
-                <div className="home-progress-ring" aria-hidden="true">
-                  <span>0/7</span>
-                </div>
-                <p className="home-card-title">기록 복구율</p>
-                <div className="home-progress-bar" aria-hidden="true">
-                  <span />
-                </div>
-              </section>
-
               <section className="home-card home-card-mini reveal-soft">
-                <p className="home-card-label">CURRENT TEAM</p>
+                <p className="home-card-label">탐색팀</p>
                 <p className="home-card-title">{selectedTeam ?? '탐색팀'}</p>
-                <p className="home-card-meta">접속 유지 중</p>
+                <p className="home-card-meta">진행 단계</p>
+                <p className="home-team-step">1 / 7</p>
               </section>
 
             </div>
