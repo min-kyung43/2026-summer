@@ -208,6 +208,10 @@
   width: 100%;
 }
 
+.team-code-panel {
+  position: relative;
+}
+
 .team-select-kicker {
   margin: 0 0 12px;
   font-family: var(--font-mono);
@@ -280,6 +284,17 @@
 .team-admin-secret {
   opacity: 0;
   box-shadow: none;
+}
+
+.team-code-panel > .team-admin-secret {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .team-admin-secret:hover,

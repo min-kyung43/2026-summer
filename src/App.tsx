@@ -44,58 +44,6 @@ const teamOptions = ['1조', '2조', '3조', '4조', '5조', '6조', '7조'] as 
 const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 
-const teamProgressRows = [
-  {
-    teamName: '1조',
-    currentStage: 'ARCHIVE #03 식당',
-    progressStatus: '진행 중',
-    hintUsed: true,
-    lastUpdatedAt: '13:42',
-  },
-  {
-    teamName: '2조',
-    currentStage: 'ARCHIVE #02 교육관',
-    progressStatus: '확인 필요',
-    hintUsed: true,
-    lastUpdatedAt: '13:37',
-  },
-  {
-    teamName: '3조',
-    currentStage: 'ARCHIVE #04 소예배실',
-    progressStatus: '진행 중',
-    hintUsed: false,
-    lastUpdatedAt: '13:45',
-  },
-  {
-    teamName: '4조',
-    currentStage: 'ARCHIVE #01 본당',
-    progressStatus: '진입',
-    hintUsed: false,
-    lastUpdatedAt: '13:31',
-  },
-  {
-    teamName: '5조',
-    currentStage: 'ARCHIVE #05 체육관',
-    progressStatus: '진행 중',
-    hintUsed: false,
-    lastUpdatedAt: '13:44',
-  },
-  {
-    teamName: '6조',
-    currentStage: 'ARCHIVE #07 마지막 기록',
-    progressStatus: '완료',
-    hintUsed: true,
-    lastUpdatedAt: '13:49',
-  },
-  {
-    teamName: '7조',
-    currentStage: 'ARCHIVE #02 교육관',
-    progressStatus: '대기',
-    hintUsed: false,
-    lastUpdatedAt: '13:28',
-  },
-] as const
-
 type Phase =
   | 'team-code'
   | 'story'
@@ -108,7 +56,6 @@ type Phase =
   | 'step-story'
   | 'step-puzzle'
   | 'step-restored'
-type ProgressStatus = (typeof teamProgressRows)[number]['progressStatus']
 type TeamOption = (typeof teamOptions)[number]
 type AppSession = {
   phase: Phase
@@ -172,32 +119,8 @@ function getStageId(stage: number) {
   return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
 }
 
-function getStageArchive(stage: number) {
-  return archives[Math.max(0, Math.min(stage - 1, archives.length - 1))]
-}
-
 function normalizeTeamCode(teamCode: string) {
   return teamCode.trim().toUpperCase()
-}
-
-function getProgressStatusClass(status: ProgressStatus) {
-  if (status === '완료') {
-    return 'is-complete'
-  }
-
-  if (status === '확인 필요') {
-    return 'is-attention'
-  }
-
-  if (status === '대기') {
-    return 'is-idle'
-  }
-
-  if (status === '진입') {
-    return 'is-entered'
-  }
-
-  return 'is-active'
 }
 
 function AdminDashboard() {
@@ -332,7 +255,11 @@ function AdminDashboard() {
   )
 }
 
-function OnboardingApp() {
+type OnboardingAppProps = {
+  onAdminOpen: () => void
+}
+
+function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [storedSession] = useState(() => loadStoredSession())
   const [phase, setPhase] = useState<Phase>(
     storedSession.activeTeam ? storedSession.phase ?? 'archive-home' : 'team-code',
@@ -350,7 +277,6 @@ function OnboardingApp() {
   const [isTeamLoading, setIsTeamLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
   const [, setSecretAdminTapCount] = useState(0)
-  const [isAdminSession, setIsAdminSession] = useState(() => isAdminUnlocked())
   const [qrScannerStatus, setQrScannerStatus] = useState<'idle' | 'scanning' | 'found' | 'error'>(
     'idle',
   )
@@ -506,8 +432,7 @@ function OnboardingApp() {
         }
 
         window.sessionStorage.setItem(adminUnlockStorageKey, 'true')
-        setIsAdminSession(true)
-        window.location.assign('/admin')
+        onAdminOpen()
         return 0
       }
 
@@ -522,47 +447,6 @@ function OnboardingApp() {
 
       return nextCount
     })
-  }
-
-  const handleAdminOpen = () => {
-    if (!isAdminSession) {
-      return
-    }
-
-    window.location.assign('/admin')
-  }
-
-  const handleStageComplete = async () => {
-    if (!activeTeam) {
-      setPhase('archive-home')
-      return
-    }
-
-    const nextStage = activeTeam.current_stage + 1
-    const nextCompletedCount = activeTeam.completed_count + 1
-    const isFinished = nextCompletedCount >= archives.length
-
-    const updates = {
-      current_stage: nextStage,
-      completed_count: nextCompletedCount,
-      is_finished: isFinished,
-      finished_at: isFinished ? new Date().toISOString() : activeTeam.finished_at,
-    }
-
-    const { data, error } = await supabase
-      .from('teams')
-      .update(updates)
-      .eq('id', activeTeam.id)
-      .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
-      .single()
-
-    if (!error && data) {
-      setActiveTeam(data)
-    } else {
-      setActiveTeam({ ...activeTeam, ...updates })
-    }
-
-    setPhase('archive-home')
   }
 
   const handleArchiveOpen = (archiveId: string) => {
@@ -655,6 +539,12 @@ function OnboardingApp() {
               <button type="submit" className="start-button team-code-submit" disabled={isTeamLoading}>
                 {isTeamLoading ? '[ CHECKING ]' : '[ ENTER ]'}
               </button>
+              <button
+                type="button"
+                className="team-admin-secret"
+                onClick={handleSecretAdminTap}
+                aria-label="관리자 숨은 진입"
+              />
             </form>
           </section>
         ) : null}
@@ -781,16 +671,6 @@ function OnboardingApp() {
                 <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
               <div className="home-actions" aria-label="빠른 메뉴">
-                {isAdminSession ? (
-                  <button
-                    type="button"
-                    className="home-icon-button"
-                    onClick={handleAdminOpen}
-                    aria-label="진행 현황"
-                  >
-                    ↆ
-                  </button>
-                ) : null}
                 <button type="button" className="home-icon-button" aria-label="설정">
                   ·
                 </button>
@@ -849,9 +729,6 @@ function OnboardingApp() {
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
               <button type="button" className="is-active">홈</button>
               <button type="button">아카이브</button>
-              {isAdminSession ? (
-                <button type="button" onClick={handleAdminOpen}>진행현황</button>
-              ) : null}
               <button type="button">힌트</button>
             </nav>
           </section>
@@ -1073,9 +950,31 @@ function OnboardingApp() {
 }
 
 function App() {
-  const isAdminRoute = window.location.pathname === '/admin'
+  const [pathname, setPathname] = useState(() => window.location.pathname)
 
-  return isAdminRoute ? <AdminDashboard /> : <OnboardingApp />
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
+
+  const handleAdminOpen = () => {
+    if (window.location.pathname !== '/admin') {
+      window.history.pushState(null, '', '/admin')
+    }
+
+    setPathname('/admin')
+  }
+
+  const isAdminRoute = pathname === '/admin'
+
+  return isAdminRoute ? <AdminDashboard /> : <OnboardingApp onAdminOpen={handleAdminOpen} />
 }
 
 export default App
