@@ -1,17 +1,6 @@
+import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
-
-type BarcodeDetectorConstructor = new (options?: {
-  formats?: string[]
-}) => {
-  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>
-}
-
-declare global {
-  interface Window {
-    BarcodeDetector?: BarcodeDetectorConstructor
-  }
-}
 
 const storySlides = [
   {
@@ -306,9 +295,7 @@ function OnboardingApp() {
   )
   const [qrScannerMessage, setQrScannerMessage] = useState('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
   const qrVideoRef = useRef<HTMLVideoElement | null>(null)
-  const qrStreamRef = useRef<MediaStream | null>(null)
-  const qrScanTimerRef = useRef<number | null>(null)
-  const qrDetectingRef = useRef(false)
+  const qrScannerControlsRef = useRef<IScannerControls | null>(null)
   const secretAdminTapTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -349,32 +336,21 @@ function OnboardingApp() {
       return
     }
 
-    if (qrScanTimerRef.current !== null) {
-      window.clearInterval(qrScanTimerRef.current)
-      qrScanTimerRef.current = null
-    }
-
-    qrStreamRef.current?.getTracks().forEach((track) => track.stop())
-    qrStreamRef.current = null
+    qrScannerControlsRef.current?.stop()
+    qrScannerControlsRef.current = null
 
     if (qrVideoRef.current) {
       qrVideoRef.current.srcObject = null
     }
-
-    qrDetectingRef.current = false
   }, [phase])
 
   useEffect(() => {
     return () => {
-      if (qrScanTimerRef.current !== null) {
-        window.clearInterval(qrScanTimerRef.current)
-      }
-
       if (secretAdminTapTimerRef.current !== null) {
         window.clearTimeout(secretAdminTapTimerRef.current)
       }
 
-      qrStreamRef.current?.getTracks().forEach((track) => track.stop())
+      qrScannerControlsRef.current?.stop()
     }
   }, [])
 
@@ -449,65 +425,46 @@ function OnboardingApp() {
       return
     }
 
-    if (!window.BarcodeDetector) {
-      setQrScannerStatus('error')
-      setQrScannerMessage('이 브라우저에서는 QR 자동 인식을 지원하지 않습니다.')
-      return
-    }
-
     try {
-      if (qrScanTimerRef.current !== null) {
-        window.clearInterval(qrScanTimerRef.current)
-        qrScanTimerRef.current = null
-      }
-
-      qrStreamRef.current?.getTracks().forEach((track) => track.stop())
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false,
-      })
-      const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
       const video = qrVideoRef.current
 
       if (!video) {
         throw new Error('QR video element is not ready.')
       }
 
-      qrStreamRef.current = stream
-      video.srcObject = stream
-      await video.play()
-
+      qrScannerControlsRef.current?.stop()
       setQrScannerStatus('scanning')
       setQrScannerMessage('QR 신호를 찾고 있습니다.')
 
-      qrScanTimerRef.current = window.setInterval(async () => {
-        if (qrDetectingRef.current || !qrVideoRef.current) {
-          return
-        }
-
-        qrDetectingRef.current = true
-
-        try {
-          const barcodes = await detector.detect(qrVideoRef.current)
-
-          if (barcodes.length > 0) {
-            if (qrScanTimerRef.current !== null) {
-              window.clearInterval(qrScanTimerRef.current)
-              qrScanTimerRef.current = null
-            }
-
-            qrStreamRef.current?.getTracks().forEach((track) => track.stop())
-            qrStreamRef.current = null
-            setQrScannerStatus('found')
-            setQrScannerMessage('QR 신호가 확인되었습니다.')
-            window.setTimeout(() => setPhase('step-story'), 500)
+      const reader = new BrowserQRCodeReader()
+      const controls = await reader.decodeFromConstraints(
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        },
+        video,
+        (result) => {
+          if (!result || qrScannerControlsRef.current === null) {
+            return
           }
-        } finally {
-          qrDetectingRef.current = false
+
+          // Later we can compare result.getText() with a specific expected QR value.
+          qrScannerControlsRef.current.stop()
+          qrScannerControlsRef.current = null
+          setQrScannerStatus('found')
+          setQrScannerMessage('QR 신호가 확인되었습니다.')
+          window.setTimeout(() => setPhase('step-story'), 500)
         }
-      }, 600)
+      )
+
+      qrScannerControlsRef.current = controls
     } catch {
+      qrScannerControlsRef.current?.stop()
+      qrScannerControlsRef.current = null
       setQrScannerStatus('error')
       setQrScannerMessage('카메라 권한을 허용한 뒤 다시 시도해주세요.')
     }
