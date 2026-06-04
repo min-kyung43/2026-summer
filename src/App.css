@@ -457,8 +457,7 @@
 }
 
 .home-app-name,
-.home-card-label,
-.home-archive-count {
+.home-card-label {
   font-family: var(--font-mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -569,8 +568,7 @@
 }
 
 .home-card-now,
-.home-card-signal,
-.home-card-archive {
+.home-card-mini {
   grid-column: 1 / -1;
 }
 
@@ -674,16 +672,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.46);
 }
 
-.home-card-signal {
-  min-height: 118px;
-  background:
-    radial-gradient(circle at 80% 30%, rgba(157, 187, 255, 0.2), transparent 32%),
-    radial-gradient(circle at 16% 110%, rgba(154, 240, 195, 0.1), transparent 36%),
-    #141414;
-}
-
 .home-card-mini {
-  min-height: 118px;
+  min-height: 96px;
 }
 
 .home-card-label {
@@ -771,18 +761,6 @@
   background: #e8f1ff;
 }
 
-.home-signal-message {
-  position: relative;
-  z-index: 1;
-  max-width: 220px;
-  margin: 16px 0 0;
-  font-family: var(--font-story);
-  color: #e8f1ff;
-  font-size: 16px;
-  font-weight: 300;
-  line-height: 1.65;
-}
-
 .home-card-row {
   position: relative;
   z-index: 1;
@@ -791,39 +769,6 @@
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
-}
-
-.home-archive-count {
-  color: var(--text-muted);
-  font-size: 10px;
-  line-height: 1.5;
-  white-space: nowrap;
-}
-
-.home-archive-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.home-archive-grid span {
-  min-height: 34px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.home-archive-grid .is-unlocked {
-  color: #050505;
-  background: #e8f1ff;
 }
 
 .home-bottom-nav {
@@ -967,14 +912,6 @@
   line-height: 1.8;
 }
 
-.problem-next-zone {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  border: 0;
-  background: transparent;
-}
-
 .problem-home-pill {
   position: absolute;
   z-index: 3;
@@ -1097,6 +1034,100 @@
   min-width: 85px;
   background: rgba(255, 255, 255, 0.92);
   color: #050608;
+}
+
+.qr-scan-panel {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 34px;
+  left: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.qr-viewfinder {
+  position: relative;
+  height: 178px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(174, 235, 255, 0.08), transparent 46%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.qr-viewfinder video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  opacity: 0;
+  filter: grayscale(1) contrast(1.08) brightness(0.72);
+}
+
+.qr-viewfinder.is-scanning video,
+.qr-viewfinder.is-found video {
+  opacity: 0.72;
+}
+
+.qr-viewfinder::before,
+.qr-viewfinder::after,
+.qr-viewfinder span {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.qr-viewfinder::before {
+  inset: 18px;
+  border: 1px solid rgba(174, 235, 255, 0.42);
+  border-radius: 18px;
+  box-shadow:
+    0 0 20px rgba(174, 235, 255, 0.08),
+    inset 0 0 18px rgba(174, 235, 255, 0.05);
+}
+
+.qr-viewfinder::after {
+  right: 28px;
+  left: 28px;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 235, 255, 0.64), transparent);
+  opacity: 0;
+}
+
+.qr-viewfinder.is-scanning::after {
+  opacity: 1;
+  animation: qrScanLine 1.6s ease-in-out infinite;
+}
+
+.qr-viewfinder span {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.18;
+}
+
+.qr-scan-message {
+  margin: 0;
+  font-family: var(--font-story);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.qr-scan-button {
+  justify-self: end;
+  min-width: 132px;
+}
+
+.qr-scan-button:disabled {
+  color: rgba(255, 255, 255, 0.5);
+  cursor: default;
 }
 
 .problem-puzzle-copy {
@@ -1603,6 +1634,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes qrScanLine {
+  0%,
+  100% {
+    transform: translateY(-58px);
+  }
+
+  50% {
+    transform: translateY(58px);
   }
 }
 

@@ -1,5 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
+
+type BarcodeDetectorConstructor = new (options?: {
+  formats?: string[]
+}) => {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>
+}
+
+declare global {
+  interface Window {
+    BarcodeDetector?: BarcodeDetectorConstructor
+  }
+}
 
 const storySlides = [
   {
@@ -211,6 +223,14 @@ function OnboardingApp() {
   const [visibleBootLines, setVisibleBootLines] = useState(0)
   const [selectedTeam, setSelectedTeam] = useState<(typeof teamOptions)[number] | null>(null)
   const [recoveryCode, setRecoveryCode] = useState('')
+  const [qrScannerStatus, setQrScannerStatus] = useState<'idle' | 'scanning' | 'found' | 'error'>(
+    'idle',
+  )
+  const [qrScannerMessage, setQrScannerMessage] = useState('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
+  const qrVideoRef = useRef<HTMLVideoElement | null>(null)
+  const qrStreamRef = useRef<MediaStream | null>(null)
+  const qrScanTimerRef = useRef<number | null>(null)
+  const qrDetectingRef = useRef(false)
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -233,6 +253,36 @@ function OnboardingApp() {
     }
   }, [phase])
 
+  useEffect(() => {
+    if (phase === 'step-intro') {
+      return
+    }
+
+    if (qrScanTimerRef.current !== null) {
+      window.clearInterval(qrScanTimerRef.current)
+      qrScanTimerRef.current = null
+    }
+
+    qrStreamRef.current?.getTracks().forEach((track) => track.stop())
+    qrStreamRef.current = null
+
+    if (qrVideoRef.current) {
+      qrVideoRef.current.srcObject = null
+    }
+
+    qrDetectingRef.current = false
+  }, [phase])
+
+  useEffect(() => {
+    return () => {
+      if (qrScanTimerRef.current !== null) {
+        window.clearInterval(qrScanTimerRef.current)
+      }
+
+      qrStreamRef.current?.getTracks().forEach((track) => track.stop())
+    }
+  }, [])
+
   const handleAdvanceStory = () => {
     if (storyIndex === storySlides.length - 1) {
       setVisibleBootLines(0)
@@ -254,7 +304,80 @@ function OnboardingApp() {
 
   const handleArchiveOpen = (archiveId: string) => {
     if (archiveId === '01') {
+      setQrScannerStatus('idle')
+      setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
       setPhase('step-intro')
+    }
+  }
+
+  const handleQrScanStart = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setQrScannerStatus('error')
+      setQrScannerMessage('이 브라우저에서는 카메라 접근을 사용할 수 없습니다.')
+      return
+    }
+
+    if (!window.BarcodeDetector) {
+      setQrScannerStatus('error')
+      setQrScannerMessage('이 브라우저에서는 QR 자동 인식을 지원하지 않습니다.')
+      return
+    }
+
+    try {
+      if (qrScanTimerRef.current !== null) {
+        window.clearInterval(qrScanTimerRef.current)
+        qrScanTimerRef.current = null
+      }
+
+      qrStreamRef.current?.getTracks().forEach((track) => track.stop())
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      })
+      const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
+      const video = qrVideoRef.current
+
+      if (!video) {
+        throw new Error('QR video element is not ready.')
+      }
+
+      qrStreamRef.current = stream
+      video.srcObject = stream
+      await video.play()
+
+      setQrScannerStatus('scanning')
+      setQrScannerMessage('QR 신호를 찾고 있습니다.')
+
+      qrScanTimerRef.current = window.setInterval(async () => {
+        if (qrDetectingRef.current || !qrVideoRef.current) {
+          return
+        }
+
+        qrDetectingRef.current = true
+
+        try {
+          const barcodes = await detector.detect(qrVideoRef.current)
+
+          if (barcodes.length > 0) {
+            if (qrScanTimerRef.current !== null) {
+              window.clearInterval(qrScanTimerRef.current)
+              qrScanTimerRef.current = null
+            }
+
+            qrStreamRef.current?.getTracks().forEach((track) => track.stop())
+            qrStreamRef.current = null
+            setQrScannerStatus('found')
+            setQrScannerMessage('QR 신호가 확인되었습니다.')
+            window.setTimeout(() => setPhase('step-story'), 500)
+          }
+        } finally {
+          qrDetectingRef.current = false
+        }
+      }, 600)
+    } catch {
+      setQrScannerStatus('error')
+      setQrScannerMessage('카메라 권한을 허용한 뒤 다시 시도해주세요.')
     }
   }
 
@@ -431,33 +554,6 @@ function OnboardingApp() {
                 </div>
               </section>
 
-              <section className="home-card home-card-signal reveal-soft">
-                <p className="home-card-label">LAST SIGNAL FOUND</p>
-                <p className="home-signal-message">
-                  빛은 아직 완전히 사라지지 않았습니다.
-                </p>
-              </section>
-
-              <section className="home-card home-card-archive reveal-soft">
-                <div className="home-card-row">
-                  <div>
-                    <p className="home-card-label">ARCHIVE INDEX</p>
-                    <p className="home-card-title">전체 아카이브</p>
-                  </div>
-                  <span className="home-archive-count">1 / 7</span>
-                </div>
-                <div className="home-archive-grid" aria-label="아카이브 잠금 상태">
-                  {archives.map((archive) => (
-                    <span
-                      key={archive.id}
-                      className={archive.locked ? 'is-locked' : 'is-unlocked'}
-                    >
-                      {archive.id}
-                    </span>
-                  ))}
-                </div>
-              </section>
-
               <section className="home-card home-card-mini reveal-soft">
                 <p className="home-card-label">CURRENT TEAM</p>
                 <p className="home-card-title">{selectedTeam ?? '탐색팀'}</p>
@@ -499,12 +595,25 @@ function OnboardingApp() {
               </p>
             </div>
 
-            <button
-              type="button"
-              className="problem-next-zone"
-              onClick={() => setPhase('step-story')}
-              aria-label="첫 번째 기록 계속 보기"
-            />
+            <div className="qr-scan-panel reveal-soft">
+              <div className={`qr-viewfinder is-${qrScannerStatus}`}>
+                <video ref={qrVideoRef} muted playsInline aria-label="QR 스캔 카메라 화면" />
+                <span aria-hidden="true" />
+              </div>
+              <p className="qr-scan-message">{qrScannerMessage}</p>
+              <button
+                type="button"
+                className="problem-pill-button qr-scan-button"
+                onClick={handleQrScanStart}
+                disabled={qrScannerStatus === 'scanning' || qrScannerStatus === 'found'}
+              >
+                {qrScannerStatus === 'scanning'
+                  ? '스캔 중'
+                  : qrScannerStatus === 'found'
+                    ? '신호 확인'
+                    : 'QR 스캔 시작'}
+              </button>
+            </div>
           </section>
         )}
 
