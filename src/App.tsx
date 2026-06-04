@@ -1,7 +1,5 @@
-import { useEffect, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-
-const archiveSignalVideo = '/media/archive-signal.mov?v=archive-signal-layer-2'
 
 const storySlides = [
   {
@@ -94,7 +92,17 @@ const teamProgressRows = [
   },
 ] as const
 
-type Phase = 'story' | 'boot' | 'ready' | 'team-select' | 'archive-home' | 'archive-detail'
+type Phase =
+  | 'story'
+  | 'boot'
+  | 'ready'
+  | 'team-select'
+  | 'archive-home'
+  | 'archive-detail'
+  | 'step-intro'
+  | 'step-story'
+  | 'step-puzzle'
+  | 'step-restored'
 type ProgressStatus = (typeof teamProgressRows)[number]['progressStatus']
 
 function getProgressStatusClass(status: ProgressStatus) {
@@ -115,33 +123,6 @@ function getProgressStatusClass(status: ProgressStatus) {
   }
 
   return 'is-active'
-}
-
-function ArchiveSignalOrb() {
-  return (
-    <div className="archive-signal-orb" aria-hidden="true">
-      <div className="archive-signal-video-shell">
-        <video
-          className="archive-signal-video archive-signal-video-ghost"
-          src={archiveSignalVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-        />
-        <video
-          className="archive-signal-video archive-signal-video-core"
-          src={archiveSignalVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-        />
-      </div>
-    </div>
-  )
 }
 
 function AdminDashboard() {
@@ -228,8 +209,8 @@ function OnboardingApp() {
   const [phase, setPhase] = useState<Phase>('story')
   const [storyIndex, setStoryIndex] = useState(0)
   const [visibleBootLines, setVisibleBootLines] = useState(0)
-  const [signalShift, setSignalShift] = useState({ x: 0, y: 0 })
   const [selectedTeam, setSelectedTeam] = useState<(typeof teamOptions)[number] | null>(null)
+  const [recoveryCode, setRecoveryCode] = useState('')
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -273,19 +254,8 @@ function OnboardingApp() {
 
   const handleArchiveOpen = (archiveId: string) => {
     if (archiveId === '01') {
-      setPhase('archive-detail')
+      setPhase('step-intro')
     }
-  }
-
-  const handleArchivePointerMove = (event: PointerEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const xRatio = (event.clientX - rect.left) / rect.width - 0.5
-    const yRatio = (event.clientY - rect.top) / rect.height - 0.5
-
-    setSignalShift({
-      x: xRatio * 18,
-      y: yRatio * 14,
-    })
   }
 
   const currentSlide = storySlides[storyIndex]
@@ -403,21 +373,7 @@ function OnboardingApp() {
         )}
 
         {phase === 'archive-home' && (
-          <section
-            className="archive-screen archive-home-screen"
-            onPointerMove={handleArchivePointerMove}
-            onPointerLeave={() => setSignalShift({ x: 0, y: 0 })}
-            style={
-              {
-                '--signal-shift-x': `${signalShift.x}px`,
-                '--signal-shift-y': `${signalShift.y}px`,
-              } as CSSProperties
-            }
-          >
-            <div className="archive-signal-layer">
-              <ArchiveSignalOrb />
-            </div>
-
+          <section className="archive-screen archive-home-screen">
             <header className="home-header reveal-soft">
               <div>
                 <p className="home-app-name">사라진 빛을 찾아서</p>
@@ -435,7 +391,11 @@ function OnboardingApp() {
             </header>
 
             <div className="home-card-grid">
-              <section className="home-card home-card-now reveal-soft">
+              <button
+                type="button"
+                className="home-card home-card-now reveal-soft"
+                onClick={() => handleArchiveOpen('01')}
+              >
                 <div className="home-now-header">
                   <span className="home-card-label">CURRENT OBJECTIVE</span>
                   <span className="home-now-badge">진행 중</span>
@@ -450,11 +410,12 @@ function OnboardingApp() {
                   </p>
                 </div>
                 <div className="home-task-list" aria-label="지금 해야 할 일">
-                  <span>01 기록 열기</span>
+                  <span>01 지금 열기</span>
                   <span>02 단서 확인</span>
                   <span>03 다음 신호 찾기</span>
                 </div>
-              </section>
+                <span className="home-now-action">첫 번째 기록 열기</span>
+              </button>
 
               <button
                 type="button"
@@ -516,7 +477,7 @@ function OnboardingApp() {
                 className="home-card home-card-cta reveal-soft"
                 onClick={() => handleArchiveOpen('01')}
               >
-                지금 해야 할 일 시작하기
+                첫 번째 기록 열기
               </button>
             </div>
 
@@ -526,6 +487,171 @@ function OnboardingApp() {
               <button type="button">진행현황</button>
               <button type="button">힌트</button>
             </nav>
+          </section>
+        )}
+
+        {phase === 'step-intro' && (
+          <section className="problem-screen problem-intro-screen">
+            <button
+              type="button"
+              className="problem-home-button"
+              onClick={() => setPhase('archive-home')}
+            >
+              HOME
+            </button>
+
+            <div className="problem-step-row reveal-soft">
+              <p className="problem-kicker">STEP 1 / 7</p>
+              <p className="problem-state">QR 신호 대기</p>
+            </div>
+
+            <div className="problem-main-copy reveal-soft">
+              <h1>첫 번째 기록</h1>
+              <p>
+                현장에 숨겨진 QR 신호를 스캔하면
+                <br />
+                기록 복구가 시작됩니다.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="problem-next-zone"
+              onClick={() => setPhase('step-story')}
+              aria-label="첫 번째 기록 계속 보기"
+            />
+          </section>
+        )}
+
+        {phase === 'step-story' && (
+          <section className="problem-screen problem-story-screen">
+            <div className="problem-glow problem-glow-blue" aria-hidden="true" />
+            <div className="problem-glow problem-glow-warm" aria-hidden="true" />
+            <button
+              type="button"
+              className="problem-home-pill"
+              onClick={() => setPhase('archive-home')}
+            >
+              HOME
+            </button>
+
+            <p className="problem-kicker problem-floating-kicker">ARCHIVE #01</p>
+
+            <div className="problem-story-copy reveal-soft">
+              <p>"...처음 빛이 사라졌을 때,</p>
+              <p>아무도 그것을 이상하게 생각하지 않았다."</p>
+              <p>"빛은 조용히 사라졌다."</p>
+            </div>
+
+            <div className="problem-bottom-row">
+              <div>
+                <p className="problem-tip">암호화된 신호를 해독하십시오.</p>
+                <div className="problem-progress" aria-label="진행 1/7">
+                  {archives.map((archive) => (
+                    <span key={`story-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="problem-pill-button"
+                onClick={() => setPhase('step-puzzle')}
+              >
+                암호 입력
+              </button>
+            </div>
+          </section>
+        )}
+
+        {phase === 'step-puzzle' && (
+          <section className="problem-screen problem-puzzle-screen">
+            <div className="problem-glow problem-glow-blue" aria-hidden="true" />
+            <div className="problem-glow problem-glow-warm" aria-hidden="true" />
+            <button
+              type="button"
+              className="problem-home-pill"
+              onClick={() => setPhase('archive-home')}
+            >
+              HOME
+            </button>
+
+            <p className="problem-kicker problem-floating-kicker">ENCRYPTED RECORD</p>
+
+            <div className="problem-puzzle-copy reveal-soft">
+              <h1>
+                복구 코드를
+                <br />
+                입력하십시오.
+              </h1>
+              <label className="problem-code-field">
+                <span>RECOVERY CODE</span>
+                <input
+                  value={recoveryCode}
+                  onChange={(event) => setRecoveryCode(event.target.value)}
+                  aria-label="복구 코드"
+                />
+              </label>
+            </div>
+
+            <div className="problem-bottom-row">
+              <div>
+                <p className="problem-tip">Tip. 현장 퍼즐의 정답이 기록을 밝힙니다.</p>
+                <div className="problem-progress" aria-label="진행 1/7">
+                  {archives.map((archive) => (
+                    <span key={`puzzle-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="problem-pill-button is-bright"
+                onClick={() => setPhase('step-restored')}
+              >
+                복구
+              </button>
+            </div>
+          </section>
+        )}
+
+        {phase === 'step-restored' && (
+          <section className="problem-screen problem-restored-screen">
+            <div className="problem-glow problem-glow-blue" aria-hidden="true" />
+            <div className="problem-glow problem-glow-warm" aria-hidden="true" />
+
+            <div className="problem-restored-header reveal-soft">
+              <p className="problem-kicker is-restored">ARCHIVE #01 RESTORED</p>
+              <span>1/7</span>
+            </div>
+
+            <div className="problem-restored-copy reveal-soft">
+              <h1>
+                기록이
+                <br />
+                복구되었습니다.
+              </h1>
+              <div className="problem-hint-box">
+                <p>
+                  기록은 사람들이 가장 많이 지나가지만,
+                  <br />
+                  아무도 기억하지 않는 곳에 숨겨져 있다.
+                </p>
+              </div>
+            </div>
+
+            <div className="problem-bottom-row">
+              <div className="problem-progress" aria-label="진행 1/7">
+                {archives.map((archive) => (
+                  <span key={`restored-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                ))}
+              </div>
+              <button
+                type="button"
+                className="problem-pill-button is-bright"
+                onClick={() => setPhase('archive-home')}
+              >
+                다음 신호
+              </button>
+            </div>
           </section>
         )}
 
