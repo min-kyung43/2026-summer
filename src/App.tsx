@@ -50,6 +50,8 @@ type Phase =
   | 'ready'
   | 'team-select'
   | 'archive-home'
+  | 'archive-list'
+  | 'hint-home'
   | 'archive-detail'
   | 'step-intro'
   | 'step-story'
@@ -70,6 +72,8 @@ const validPhases = new Set<Phase>([
   'ready',
   'team-select',
   'archive-home',
+  'archive-list',
+  'hint-home',
   'archive-detail',
   'step-intro',
   'step-story',
@@ -139,7 +143,11 @@ function getStageId(stage: number) {
   return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
 }
 
-function AdminDashboard() {
+type AdminDashboardProps = {
+  onBack: () => void
+}
+
+function AdminDashboard({ onBack }: AdminDashboardProps) {
   const adminUnlocked = isAdminUnlocked()
   const [teams, setTeams] = useState<TeamRecord[]>([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(true)
@@ -186,6 +194,9 @@ function AdminDashboard() {
     return (
       <main className="admin-shell">
         <section className="admin-panel admin-locked-panel">
+          <button type="button" className="admin-back-button" onClick={onBack}>
+            이전
+          </button>
           <p className="admin-kicker">RESTRICTED ARCHIVE MONITOR</p>
           <h1 className="admin-title">접근 권한이 없습니다</h1>
           <p className="admin-locked-copy">
@@ -203,6 +214,9 @@ function AdminDashboard() {
   return (
     <main className="admin-shell">
       <section className="admin-panel">
+        <button type="button" className="admin-back-button" onClick={onBack}>
+          이전
+        </button>
         <header className="admin-header">
           <div>
             <p className="admin-kicker">RESTORED ARCHIVE MONITOR</p>
@@ -233,38 +247,33 @@ function AdminDashboard() {
         <div className="admin-table-card">
           {adminError ? <p className="admin-table-message">{adminError}</p> : null}
           {isLoadingTeams ? <p className="admin-table-message">팀 목록을 불러오는 중입니다.</p> : null}
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>조 이름</th>
-                <th>현재 단계</th>
-                <th>완료 개수</th>
-                <th>힌트 사용 횟수</th>
-                <th>완료 여부</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((row) => (
-                <tr key={row.id}>
-                  <td className="admin-team-name">{row.team_name}</td>
-                  <td className="admin-stage">ARCHIVE #{getStageId(row.current_stage)}</td>
-                  <td>
-                    <span className="admin-updated">{row.completed_count}</span>
-                  </td>
-                  <td>
-                    <span className={row.hint_count > 0 ? 'admin-hint-used' : 'admin-hint-none'}>
+          <div className="admin-team-list" aria-label="팀별 진행 현황">
+            {teams.map((row) => (
+              <article className="admin-team-card" key={row.id}>
+                <div className="admin-team-card-header">
+                  <div>
+                    <p className="admin-team-name">{row.team_name}</p>
+                    <p className="admin-stage">ARCHIVE #{getStageId(row.current_stage)}</p>
+                  </div>
+                  <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
+                    {row.is_finished ? '완료' : '진행 중'}
+                  </span>
+                </div>
+                <div className="admin-team-metrics">
+                  <div>
+                    <span>완료</span>
+                    <strong>{row.completed_count}</strong>
+                  </div>
+                  <div>
+                    <span>힌트</span>
+                    <strong className={row.hint_count > 0 ? 'admin-hint-used' : 'admin-hint-none'}>
                       {row.hint_count}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
-                      {row.is_finished ? '완료' : '진행 중'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     </main>
@@ -641,7 +650,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </header>
 
             <div className="home-card-grid">
-              <section className="home-card home-card-signal reveal-soft" aria-label="시스템 메시지">
+              <section className="home-signal-message reveal-soft" aria-label="시스템 메시지">
                 <p className="home-card-label">LAST SIGNAL FOUND</p>
                 <p className="home-signal-copy">
                   "...빛은 아직 완전히 사라지지 않았다."
@@ -680,31 +689,99 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 </div>
               </section>
 
-              <button
-                type="button"
-                className="home-card home-card-primary reveal-soft"
-                onClick={() => handleArchiveOpen('01')}
-              >
-                <span className="home-card-label">ARCHIVE #01</span>
-                <strong className="home-mission-number">01</strong>
-                <span className="home-card-title">첫 번째 기록</span>
-                <span className="home-card-meta">위치  본당</span>
-                <span className="home-card-status">상태  복구 가능</span>
-              </button>
-
-              <section className="home-card home-card-mini reveal-soft">
-                <p className="home-card-label">탐색팀</p>
-                <p className="home-card-title">{selectedTeam ?? '탐색팀'}</p>
-                <p className="home-card-meta">진행 단계</p>
-                <p className="home-team-step">1 / 7</p>
-              </section>
-
             </div>
 
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
-              <button type="button" className="is-active">홈</button>
-              <button type="button">아카이브</button>
-              <button type="button">힌트</button>
+              <button type="button" className="is-active" onClick={() => setPhase('archive-home')}>홈</button>
+              <button type="button" onClick={() => setPhase('archive-list')}>아카이브</button>
+              <button type="button" onClick={() => setPhase('hint-home')}>힌트</button>
+            </nav>
+          </section>
+        )}
+
+        {phase === 'archive-list' && (
+          <section className="archive-screen archive-home-screen archive-tab-screen">
+            <header className="home-header reveal-soft">
+              <div>
+                <p className="home-app-name">RESTORED ARCHIVES</p>
+                <h1 className="home-title">아카이브</h1>
+                <p className="home-subtitle">복구 가능한 기록을 확인하세요.</p>
+              </div>
+            </header>
+
+            <div className="archive-list">
+              {archives.map((archive) => (
+                <button
+                  key={archive.id}
+                  type="button"
+                  className={`archive-card ${archive.locked ? 'is-locked' : 'is-unlocked'}`}
+                  disabled={archive.locked}
+                  onClick={() => handleArchiveOpen(archive.id)}
+                >
+                  <div className="archive-card-header">
+                    <span className="archive-card-id">ARCHIVE #{archive.id}</span>
+                    <span className="archive-lock">{archive.locked ? 'LOCKED' : 'OPEN'}</span>
+                  </div>
+                  <p className="archive-card-title">
+                    {archive.locked ? '기록 복구 필요' : archive.name}
+                  </p>
+                  <p className="archive-card-status">
+                    {archive.locked ? '아직 신호가 잠겨 있습니다.' : '첫 번째 조사를 시작할 수 있습니다.'}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
+              <button type="button" onClick={() => setPhase('archive-home')}>홈</button>
+              <button type="button" className="is-active" onClick={() => setPhase('archive-list')}>아카이브</button>
+              <button type="button" onClick={() => setPhase('hint-home')}>힌트</button>
+            </nav>
+          </section>
+        )}
+
+        {phase === 'hint-home' && (
+          <section className="archive-screen archive-home-screen hint-tab-screen">
+            <header className="home-header reveal-soft">
+              <div>
+                <p className="home-app-name">SIGNAL HINTS</p>
+                <h1 className="home-title">힌트</h1>
+                <p className="home-subtitle">막혔을 때만 조심스럽게 열어보세요.</p>
+              </div>
+            </header>
+
+            <div className="hint-card-list">
+              <section className="home-card hint-card reveal-soft">
+                <p className="home-card-label">CURRENT HINT</p>
+                <h2 className="hint-card-title">본당 신호</h2>
+                <p className="hint-card-copy">
+                  사람들이 가장 많이 지나가지만, 아무도 오래 바라보지 않는 곳을 확인하세요.
+                </p>
+              </section>
+
+              <section className="home-card hint-card reveal-soft">
+                <p className="home-card-label">HINT USAGE</p>
+                <p className="home-progress-value">
+                  {activeTeam?.hint_count ?? 0}
+                </p>
+                <p className="home-card-title">사용한 힌트</p>
+              </section>
+
+              <button
+                type="button"
+                className="home-card hint-start-card reveal-soft"
+                onClick={() => handleArchiveOpen('01')}
+              >
+                <span className="home-card-label">NEXT ACTION</span>
+                <span className="hint-card-title">첫 번째 조사로 이동</span>
+                <span className="hint-card-copy">QR 신호를 스캔하고 기록 복구를 시작합니다.</span>
+              </button>
+            </div>
+
+            <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
+              <button type="button" onClick={() => setPhase('archive-home')}>홈</button>
+              <button type="button" onClick={() => setPhase('archive-list')}>아카이브</button>
+              <button type="button" className="is-active" onClick={() => setPhase('hint-home')}>힌트</button>
             </nav>
           </section>
         )}
@@ -947,9 +1024,29 @@ function App() {
     setPathname('/admin')
   }
 
+  const handleAdminBack = () => {
+    if (window.history.length > 1) {
+      window.history.back()
+      window.setTimeout(() => {
+        if (window.location.pathname === '/admin') {
+          window.history.pushState(null, '', '/')
+          setPathname('/')
+        }
+      }, 120)
+      return
+    }
+
+    window.history.pushState(null, '', '/')
+    setPathname('/')
+  }
+
   const isAdminRoute = pathname === '/admin'
 
-  return isAdminRoute ? <AdminDashboard /> : <OnboardingApp onAdminOpen={handleAdminOpen} />
+  return isAdminRoute ? (
+    <AdminDashboard onBack={handleAdminBack} />
+  ) : (
+    <OnboardingApp onAdminOpen={handleAdminOpen} />
+  )
 }
 
 export default App
