@@ -474,7 +474,7 @@
 .home-title {
   margin: 0;
   font-family: var(--font-story);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.18;
   letter-spacing: 0;
@@ -482,9 +482,9 @@
 }
 
 .home-subtitle {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-family: var(--font-story);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 300;
   line-height: 1.6;
   color: var(--text-secondary);
@@ -551,7 +551,7 @@
 }
 
 .home-card-primary {
-  min-height: 176px;
+  min-height: 154px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -561,7 +561,7 @@
 }
 
 .home-card-progress {
-  min-height: 176px;
+  min-height: 154px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -570,16 +570,16 @@
 
 .home-card-now,
 .home-card-signal,
-.home-card-archive,
-.home-card-cta {
+.home-card-archive {
   grid-column: 1 / -1;
 }
 
 .home-card-now {
-  min-height: 214px;
+  min-height: 166px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  padding: 22px 20px 20px;
   border-color: rgba(232, 241, 255, 0.2);
   background:
     radial-gradient(circle at 82% 14%, rgba(232, 241, 255, 0.24), transparent 30%),
@@ -606,8 +606,7 @@
 }
 
 .home-now-header,
-.home-now-body,
-.home-task-list {
+.home-now-body {
   position: relative;
   z-index: 1;
 }
@@ -634,11 +633,8 @@
 }
 
 .home-now-body {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 16px;
-  align-items: end;
-  margin: 16px 0 14px;
+  display: block;
+  margin: 18px 0 20px;
 }
 
 .home-now-location {
@@ -654,61 +650,23 @@
   margin: 0;
   font-family: var(--font-story);
   color: #f7fbff;
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
-.home-now-copy {
-  margin: 0;
-  font-family: var(--font-story);
-  color: #dfe8f8;
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.72;
-}
-
-.home-task-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.home-task-list span {
-  min-height: 34px;
-  display: grid;
-  place-items: center;
-  padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: var(--text-secondary);
-  font-family: var(--font-story);
-  font-size: 11px;
-  font-weight: 300;
-  line-height: 1.2;
-  text-align: center;
-}
-
-.home-task-list span:first-child {
-  border-color: rgba(232, 241, 255, 0.3);
-  background: rgba(232, 241, 255, 0.12);
-  color: #f7fbff;
-}
-
 .home-now-action {
   position: relative;
   z-index: 1;
-  min-height: 46px;
+  min-height: 42px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   background: #e8f1ff;
   color: #050505;
   font-family: var(--font-story);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1;
   box-shadow:
@@ -728,26 +686,6 @@
   min-height: 118px;
 }
 
-.home-card-cta {
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-color: rgba(232, 241, 255, 0.22);
-  background:
-    linear-gradient(90deg, rgba(232, 241, 255, 0.95), rgba(157, 187, 255, 0.92)),
-    #e8f1ff;
-  color: #050505;
-  font-family: var(--font-story);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1;
-  text-align: center;
-  box-shadow:
-    0 0 26px rgba(157, 187, 255, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
 .home-card-label {
   position: relative;
   z-index: 1;
@@ -763,7 +701,7 @@
   display: block;
   font-family: var(--font-mono);
   color: #f7fbff;
-  font-size: 44px;
+  font-size: 32px;
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: 0.02em;
@@ -776,7 +714,7 @@
   margin: 0;
   font-family: var(--font-story);
   color: #f1f3f8;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.4;
 }
@@ -788,7 +726,7 @@
   display: block;
   font-family: var(--font-story);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 300;
   line-height: 1.55;
 }
@@ -799,8 +737,8 @@
 
 .home-progress-ring {
   position: relative;
-  width: 68px;
-  height: 68px;
+  width: 58px;
+  height: 58px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -813,7 +751,7 @@
 .home-progress-ring span {
   font-family: var(--font-mono);
   color: #e8f1ff;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 

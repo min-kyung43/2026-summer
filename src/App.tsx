@@ -405,14 +405,6 @@ function OnboardingApp() {
                     <p className="home-now-location">현재 위치</p>
                     <h2 className="home-now-title">본당</h2>
                   </div>
-                  <p className="home-now-copy">
-                    첫 번째 기록을 열고, 사라진 빛의 흔적을 확인하세요.
-                  </p>
-                </div>
-                <div className="home-task-list" aria-label="지금 해야 할 일">
-                  <span>01 지금 열기</span>
-                  <span>02 단서 확인</span>
-                  <span>03 다음 신호 찾기</span>
                 </div>
                 <span className="home-now-action">첫 번째 기록 열기</span>
               </button>
@@ -472,13 +464,6 @@ function OnboardingApp() {
                 <p className="home-card-meta">접속 유지 중</p>
               </section>
 
-              <button
-                type="button"
-                className="home-card home-card-cta reveal-soft"
-                onClick={() => handleArchiveOpen('01')}
-              >
-                첫 번째 기록 열기
-              </button>
             </div>
 
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
