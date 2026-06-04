@@ -1,6 +1,7 @@
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import './App.css'
+import { supabase, type TeamRecord } from './supabase'
 
 const storySlides = [
   {
@@ -96,6 +97,7 @@ const teamProgressRows = [
 ] as const
 
 type Phase =
+  | 'team-code'
   | 'story'
   | 'boot'
   | 'ready'
@@ -112,10 +114,12 @@ type AppSession = {
   phase: Phase
   storyIndex: number
   selectedTeam: TeamOption | null
+  activeTeam: TeamRecord | null
   recoveryCode: string
 }
 
 const validPhases = new Set<Phase>([
+  'team-code',
   'story',
   'boot',
   'ready',
@@ -148,6 +152,7 @@ function loadStoredSession(): Partial<AppSession> {
         : undefined,
       storyIndex: typeof parsedSession.storyIndex === 'number' ? parsedSession.storyIndex : undefined,
       selectedTeam: isTeamOption(parsedSession.selectedTeam) ? parsedSession.selectedTeam : null,
+      activeTeam: parsedSession.activeTeam ?? null,
       recoveryCode: typeof parsedSession.recoveryCode === 'string' ? parsedSession.recoveryCode : '',
     }
   } catch {
@@ -161,6 +166,18 @@ function isAdminUnlocked() {
   } catch {
     return false
   }
+}
+
+function getStageId(stage: number) {
+  return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
+}
+
+function getStageArchive(stage: number) {
+  return archives[Math.max(0, Math.min(stage - 1, archives.length - 1))]
+}
+
+function normalizeTeamCode(teamCode: string) {
+  return teamCode.trim().toUpperCase()
 }
 
 function getProgressStatusClass(status: ProgressStatus) {
@@ -184,7 +201,49 @@ function getProgressStatusClass(status: ProgressStatus) {
 }
 
 function AdminDashboard() {
-  if (!isAdminUnlocked()) {
+  const adminUnlocked = isAdminUnlocked()
+  const [teams, setTeams] = useState<TeamRecord[]>([])
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true)
+  const [adminError, setAdminError] = useState('')
+
+  useEffect(() => {
+    if (!adminUnlocked) {
+      setIsLoadingTeams(false)
+      return
+    }
+
+    let isMounted = true
+
+    async function loadTeams() {
+      setIsLoadingTeams(true)
+      const { data, error } = await supabase
+        .from('teams')
+        .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+        .order('team_name', { ascending: true })
+
+      if (!isMounted) {
+        return
+      }
+
+      if (error) {
+        setAdminError('팀 목록을 불러오지 못했습니다.')
+        setTeams([])
+      } else {
+        setAdminError('')
+        setTeams(data ?? [])
+      }
+
+      setIsLoadingTeams(false)
+    }
+
+    void loadTeams()
+
+    return () => {
+      isMounted = false
+    }
+  }, [adminUnlocked])
+
+  if (!adminUnlocked) {
     return (
       <main className="admin-shell">
         <section className="admin-panel admin-locked-panel">
@@ -198,13 +257,9 @@ function AdminDashboard() {
     )
   }
 
-  const activeTeams = teamProgressRows.filter(
-    (row) => row.progressStatus === '진행 중',
-  ).length
-  const hintUsedTeams = teamProgressRows.filter((row) => row.hintUsed).length
-  const completedTeams = teamProgressRows.filter(
-    (row) => row.progressStatus === '완료',
-  ).length
+  const activeTeams = teams.filter((row) => !row.is_finished).length
+  const hintUsedTeams = teams.reduce((total, row) => total + row.hint_count, 0)
+  const completedTeams = teams.filter((row) => row.is_finished).length
 
   return (
     <main className="admin-shell">
@@ -220,7 +275,7 @@ function AdminDashboard() {
         <div className="admin-summary" aria-label="팀 진행 요약">
           <div className="admin-summary-item">
             <span>전체 조</span>
-            <strong>{teamProgressRows.length}</strong>
+            <strong>{teams.length}</strong>
           </div>
           <div className="admin-summary-item">
             <span>진행 중</span>
@@ -237,36 +292,36 @@ function AdminDashboard() {
         </div>
 
         <div className="admin-table-card">
+          {adminError ? <p className="admin-table-message">{adminError}</p> : null}
+          {isLoadingTeams ? <p className="admin-table-message">팀 목록을 불러오는 중입니다.</p> : null}
           <table className="admin-table">
             <thead>
               <tr>
                 <th>조 이름</th>
                 <th>현재 단계</th>
-                <th>진행 상태</th>
-                <th>힌트 사용 여부</th>
-                <th>마지막 업데이트</th>
+                <th>완료 개수</th>
+                <th>힌트 사용 횟수</th>
+                <th>완료 여부</th>
               </tr>
             </thead>
             <tbody>
-              {teamProgressRows.map((row) => (
-                <tr key={row.teamName}>
-                  <td className="admin-team-name">{row.teamName}</td>
-                  <td className="admin-stage">{row.currentStage}</td>
+              {teams.map((row) => (
+                <tr key={row.id}>
+                  <td className="admin-team-name">{row.team_name}</td>
+                  <td className="admin-stage">ARCHIVE #{getStageId(row.current_stage)}</td>
                   <td>
-                    <span
-                      className={`admin-status ${getProgressStatusClass(
-                        row.progressStatus,
-                      )}`}
-                    >
-                      {row.progressStatus}
+                    <span className="admin-updated">{row.completed_count}</span>
+                  </td>
+                  <td>
+                    <span className={row.hint_count > 0 ? 'admin-hint-used' : 'admin-hint-none'}>
+                      {row.hint_count}
                     </span>
                   </td>
                   <td>
-                    <span className={row.hintUsed ? 'admin-hint-used' : 'admin-hint-none'}>
-                      {row.hintUsed ? '사용' : '미사용'}
+                    <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
+                      {row.is_finished ? '완료' : '진행 중'}
                     </span>
                   </td>
-                  <td className="admin-updated">{row.lastUpdatedAt}</td>
                 </tr>
               ))}
             </tbody>
@@ -279,7 +334,9 @@ function AdminDashboard() {
 
 function OnboardingApp() {
   const [storedSession] = useState(() => loadStoredSession())
-  const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'story')
+  const [phase, setPhase] = useState<Phase>(
+    storedSession.activeTeam ? storedSession.phase ?? 'archive-home' : 'team-code',
+  )
   const [storyIndex, setStoryIndex] = useState(() =>
     Math.min(storedSession.storyIndex ?? 0, storySlides.length - 1),
   )
@@ -287,6 +344,10 @@ function OnboardingApp() {
   const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(
     storedSession.selectedTeam ?? null,
   )
+  const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(storedSession.activeTeam ?? null)
+  const [teamCodeInput, setTeamCodeInput] = useState('')
+  const [teamCodeError, setTeamCodeError] = useState('')
+  const [isTeamLoading, setIsTeamLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
   const [, setSecretAdminTapCount] = useState(0)
   const [isAdminSession, setIsAdminSession] = useState(() => isAdminUnlocked())
@@ -305,10 +366,39 @@ function OnboardingApp() {
         phase,
         storyIndex,
         selectedTeam,
+        activeTeam,
         recoveryCode,
       } satisfies AppSession),
     )
-  }, [phase, recoveryCode, selectedTeam, storyIndex])
+  }, [activeTeam, phase, recoveryCode, selectedTeam, storyIndex])
+
+  useEffect(() => {
+    if (!activeTeam?.team_code) {
+      return
+    }
+
+    let isMounted = true
+
+    async function refreshTeam() {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+        .eq('team_code', activeTeam?.team_code)
+        .maybeSingle()
+
+      if (!isMounted || error || !data) {
+        return
+      }
+
+      setActiveTeam(data)
+    }
+
+    void refreshTeam()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeTeam?.team_code])
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -368,6 +458,38 @@ function OnboardingApp() {
     setPhase('team-select')
   }
 
+  const handleTeamCodeSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const teamCode = normalizeTeamCode(teamCodeInput)
+
+    if (!teamCode) {
+      setTeamCodeError('팀 코드를 입력해주세요.')
+      return
+    }
+
+    setIsTeamLoading(true)
+    setTeamCodeError('')
+
+    const { data, error } = await supabase
+      .from('teams')
+      .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+      .eq('team_code', teamCode)
+      .maybeSingle()
+
+    setIsTeamLoading(false)
+
+    if (error || !data) {
+      setTeamCodeError('팀 코드를 확인할 수 없습니다. TEAM01~TEAM07을 입력해주세요.')
+      return
+    }
+
+    setActiveTeam(data)
+    setSelectedTeam(null)
+    setTeamCodeInput('')
+    setPhase('archive-home')
+  }
+
   const handleTeamSelect = (teamName: (typeof teamOptions)[number]) => {
     setSelectedTeam(teamName)
     setPhase('archive-home')
@@ -408,6 +530,39 @@ function OnboardingApp() {
     }
 
     window.location.assign('/admin')
+  }
+
+  const handleStageComplete = async () => {
+    if (!activeTeam) {
+      setPhase('archive-home')
+      return
+    }
+
+    const nextStage = activeTeam.current_stage + 1
+    const nextCompletedCount = activeTeam.completed_count + 1
+    const isFinished = nextCompletedCount >= archives.length
+
+    const updates = {
+      current_stage: nextStage,
+      completed_count: nextCompletedCount,
+      is_finished: isFinished,
+      finished_at: isFinished ? new Date().toISOString() : activeTeam.finished_at,
+    }
+
+    const { data, error } = await supabase
+      .from('teams')
+      .update(updates)
+      .eq('id', activeTeam.id)
+      .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+      .single()
+
+    if (!error && data) {
+      setActiveTeam(data)
+    } else {
+      setActiveTeam({ ...activeTeam, ...updates })
+    }
+
+    setPhase('archive-home')
   }
 
   const handleArchiveOpen = (archiveId: string) => {
@@ -476,6 +631,33 @@ function OnboardingApp() {
     <main className="app-shell">
       <div className="screen-frame">
         <div className="screen-overlay" aria-hidden="true" />
+
+        {phase === 'team-code' ? (
+          <section className="team-code-screen">
+            <form className="team-code-panel reveal-soft" onSubmit={handleTeamCodeSubmit}>
+              <p className="team-select-kicker">TEAM ACCESS REQUIRED</p>
+              <h1 className="team-select-title">팀 코드를 입력하세요</h1>
+              <p className="team-select-description">
+                담당자에게 받은 TEAM01~TEAM07 코드를 입력하면 기록 보관소에 접속합니다.
+              </p>
+              <label className="team-code-field">
+                <span>TEAM CODE</span>
+                <input
+                  value={teamCodeInput}
+                  onChange={(event) => setTeamCodeInput(event.target.value.toUpperCase())}
+                  placeholder="TEAM01"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  inputMode="text"
+                />
+              </label>
+              {teamCodeError ? <p className="team-code-error">{teamCodeError}</p> : null}
+              <button type="submit" className="start-button team-code-submit" disabled={isTeamLoading}>
+                {isTeamLoading ? '[ CHECKING ]' : '[ ENTER ]'}
+              </button>
+            </form>
+          </section>
+        ) : null}
 
         {phase === 'story' ? (
           <button
