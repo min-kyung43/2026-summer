@@ -321,11 +321,11 @@ type OnboardingAppProps = {
 
 function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [storedSession] = useState(() => loadStoredSession())
-  const [phase, setPhase] = useState<Phase>('story')
-  const [storyIndex, setStoryIndex] = useState(0)
+  const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'story')
+  const [storyIndex, setStoryIndex] = useState(storedSession.storyIndex ?? 0)
   const [visibleBootLines, setVisibleBootLines] = useState(0)
-  const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(null)
-  const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(null)
+  const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(storedSession.selectedTeam ?? null)
+  const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(storedSession.activeTeam ?? null)
   const [isTeamSelectLoading, setIsTeamSelectLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
   const [, setSecretAdminTapCount] = useState(0)
@@ -690,7 +690,12 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
               <div className="home-actions" aria-label="빠른 메뉴">
-                <button type="button" className="home-icon-button" aria-label="설정">
+                <button
+                  type="button"
+                  className="home-icon-button"
+                  aria-label="조 선택 화면으로 이동"
+                  onClick={() => setPhase('team-select')}
+                >
                   ·
                 </button>
               </div>
@@ -1072,6 +1077,17 @@ function App() {
   }
 
   const handleAdminBack = () => {
+    window.localStorage.setItem(
+      appSessionStorageKey,
+      JSON.stringify({
+        phase: 'team-select',
+        storyIndex: 0,
+        selectedTeam: null,
+        activeTeam: null,
+        recoveryCode: '',
+      } satisfies AppSession),
+    )
+
     if (window.history.length > 1) {
       window.history.back()
       window.setTimeout(() => {
