@@ -277,6 +277,16 @@
   transform: translateY(1px);
 }
 
+.team-admin-secret {
+  opacity: 0;
+  box-shadow: none;
+}
+
+.team-admin-secret:hover,
+.team-admin-secret:focus-visible {
+  opacity: 0.05;
+}
+
 .boot-panel {
   width: 100%;
   display: flex;
@@ -781,7 +791,7 @@
   margin: 0 auto;
   min-height: 58px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 4px;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -1576,6 +1586,20 @@
 .admin-updated {
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.admin-locked-panel {
+  max-width: 620px;
+}
+
+.admin-locked-copy {
+  max-width: 360px;
+  margin: 18px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-story);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.8;
 }
 
 @keyframes signalFloat {

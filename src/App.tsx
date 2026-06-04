@@ -51,6 +51,8 @@ const archives = [
 ] as const
 
 const teamOptions = ['1조', '2조', '3조', '4조', '5조', '6조', '7조'] as const
+const appSessionStorageKey = 'lost-light-app-session'
+const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 
 const teamProgressRows = [
   {
@@ -116,6 +118,61 @@ type Phase =
   | 'step-puzzle'
   | 'step-restored'
 type ProgressStatus = (typeof teamProgressRows)[number]['progressStatus']
+type TeamOption = (typeof teamOptions)[number]
+type AppSession = {
+  phase: Phase
+  storyIndex: number
+  selectedTeam: TeamOption | null
+  recoveryCode: string
+}
+
+const validPhases = new Set<Phase>([
+  'story',
+  'boot',
+  'ready',
+  'team-select',
+  'archive-home',
+  'archive-detail',
+  'step-intro',
+  'step-story',
+  'step-puzzle',
+  'step-restored',
+])
+
+function isTeamOption(value: unknown): value is TeamOption {
+  return typeof value === 'string' && teamOptions.includes(value as TeamOption)
+}
+
+function loadStoredSession(): Partial<AppSession> {
+  try {
+    const storedSession = window.localStorage.getItem(appSessionStorageKey)
+
+    if (!storedSession) {
+      return {}
+    }
+
+    const parsedSession = JSON.parse(storedSession) as Partial<AppSession>
+
+    return {
+      phase: parsedSession.phase && validPhases.has(parsedSession.phase)
+        ? parsedSession.phase
+        : undefined,
+      storyIndex: typeof parsedSession.storyIndex === 'number' ? parsedSession.storyIndex : undefined,
+      selectedTeam: isTeamOption(parsedSession.selectedTeam) ? parsedSession.selectedTeam : null,
+      recoveryCode: typeof parsedSession.recoveryCode === 'string' ? parsedSession.recoveryCode : '',
+    }
+  } catch {
+    return {}
+  }
+}
+
+function isAdminUnlocked() {
+  try {
+    return window.sessionStorage.getItem(adminUnlockStorageKey) === 'true'
+  } catch {
+    return false
+  }
+}
 
 function getProgressStatusClass(status: ProgressStatus) {
   if (status === '완료') {
@@ -138,6 +195,20 @@ function getProgressStatusClass(status: ProgressStatus) {
 }
 
 function AdminDashboard() {
+  if (!isAdminUnlocked()) {
+    return (
+      <main className="admin-shell">
+        <section className="admin-panel admin-locked-panel">
+          <p className="admin-kicker">RESTRICTED ARCHIVE MONITOR</p>
+          <h1 className="admin-title">접근 권한이 없습니다</h1>
+          <p className="admin-locked-copy">
+            관리자 인증을 거친 접속에서만 진행현황을 확인할 수 있습니다.
+          </p>
+        </section>
+      </main>
+    )
+  }
+
   const activeTeams = teamProgressRows.filter(
     (row) => row.progressStatus === '진행 중',
   ).length
@@ -218,11 +289,18 @@ function AdminDashboard() {
 }
 
 function OnboardingApp() {
-  const [phase, setPhase] = useState<Phase>('story')
-  const [storyIndex, setStoryIndex] = useState(0)
+  const [storedSession] = useState(() => loadStoredSession())
+  const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'story')
+  const [storyIndex, setStoryIndex] = useState(() =>
+    Math.min(storedSession.storyIndex ?? 0, storySlides.length - 1),
+  )
   const [visibleBootLines, setVisibleBootLines] = useState(0)
-  const [selectedTeam, setSelectedTeam] = useState<(typeof teamOptions)[number] | null>(null)
-  const [recoveryCode, setRecoveryCode] = useState('')
+  const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(
+    storedSession.selectedTeam ?? null,
+  )
+  const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
+  const [, setSecretAdminTapCount] = useState(0)
+  const [isAdminSession, setIsAdminSession] = useState(() => isAdminUnlocked())
   const [qrScannerStatus, setQrScannerStatus] = useState<'idle' | 'scanning' | 'found' | 'error'>(
     'idle',
   )
@@ -231,6 +309,19 @@ function OnboardingApp() {
   const qrStreamRef = useRef<MediaStream | null>(null)
   const qrScanTimerRef = useRef<number | null>(null)
   const qrDetectingRef = useRef(false)
+  const secretAdminTapTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      appSessionStorageKey,
+      JSON.stringify({
+        phase,
+        storyIndex,
+        selectedTeam,
+        recoveryCode,
+      } satisfies AppSession),
+    )
+  }, [phase, recoveryCode, selectedTeam, storyIndex])
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -279,6 +370,10 @@ function OnboardingApp() {
         window.clearInterval(qrScanTimerRef.current)
       }
 
+      if (secretAdminTapTimerRef.current !== null) {
+        window.clearTimeout(secretAdminTapTimerRef.current)
+      }
+
       qrStreamRef.current?.getTracks().forEach((track) => track.stop())
     }
   }, [])
@@ -300,6 +395,43 @@ function OnboardingApp() {
   const handleTeamSelect = (teamName: (typeof teamOptions)[number]) => {
     setSelectedTeam(teamName)
     setPhase('archive-home')
+  }
+
+  const handleSecretAdminTap = () => {
+    setSecretAdminTapCount((currentCount) => {
+      const nextCount = currentCount + 1
+
+      if (nextCount >= 3) {
+        if (secretAdminTapTimerRef.current !== null) {
+          window.clearTimeout(secretAdminTapTimerRef.current)
+          secretAdminTapTimerRef.current = null
+        }
+
+        window.sessionStorage.setItem(adminUnlockStorageKey, 'true')
+        setIsAdminSession(true)
+        window.location.assign('/admin')
+        return 0
+      }
+
+      if (secretAdminTapTimerRef.current !== null) {
+        window.clearTimeout(secretAdminTapTimerRef.current)
+      }
+
+      secretAdminTapTimerRef.current = window.setTimeout(() => {
+        setSecretAdminTapCount(0)
+        secretAdminTapTimerRef.current = null
+      }, 1200)
+
+      return nextCount
+    })
+  }
+
+  const handleAdminOpen = () => {
+    if (!isAdminSession) {
+      return
+    }
+
+    window.location.assign('/admin')
   }
 
   const handleArchiveOpen = (archiveId: string) => {
@@ -490,6 +622,12 @@ function OnboardingApp() {
                     {teamName}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="team-option-button team-admin-secret"
+                  onClick={handleSecretAdminTap}
+                  aria-label="관리자 숨은 진입"
+                />
               </div>
             </div>
           </section>
@@ -504,9 +642,16 @@ function OnboardingApp() {
                 <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
               <div className="home-actions" aria-label="빠른 메뉴">
-                <button type="button" className="home-icon-button" aria-label="진행 현황">
-                  ↆ
-                </button>
+                {isAdminSession ? (
+                  <button
+                    type="button"
+                    className="home-icon-button"
+                    onClick={handleAdminOpen}
+                    aria-label="진행 현황"
+                  >
+                    ↆ
+                  </button>
+                ) : null}
                 <button type="button" className="home-icon-button" aria-label="설정">
                   ·
                 </button>
@@ -565,7 +710,9 @@ function OnboardingApp() {
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
               <button type="button" className="is-active">홈</button>
               <button type="button">아카이브</button>
-              <button type="button">진행현황</button>
+              {isAdminSession ? (
+                <button type="button" onClick={handleAdminOpen}>진행현황</button>
+              ) : null}
               <button type="button">힌트</button>
             </nav>
           </section>
