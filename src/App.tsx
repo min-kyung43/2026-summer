@@ -40,7 +40,80 @@ const archives = [
   { id: '07', name: '마지막 기록', status: '잠금', locked: true },
 ] as const
 
+const teamProgressRows = [
+  {
+    teamName: '1조',
+    currentStage: 'ARCHIVE #03 식당',
+    progressStatus: '진행 중',
+    hintUsed: true,
+    lastUpdatedAt: '13:42',
+  },
+  {
+    teamName: '2조',
+    currentStage: 'ARCHIVE #02 교육관',
+    progressStatus: '확인 필요',
+    hintUsed: true,
+    lastUpdatedAt: '13:37',
+  },
+  {
+    teamName: '3조',
+    currentStage: 'ARCHIVE #04 소예배실',
+    progressStatus: '진행 중',
+    hintUsed: false,
+    lastUpdatedAt: '13:45',
+  },
+  {
+    teamName: '4조',
+    currentStage: 'ARCHIVE #01 본당',
+    progressStatus: '진입',
+    hintUsed: false,
+    lastUpdatedAt: '13:31',
+  },
+  {
+    teamName: '5조',
+    currentStage: 'ARCHIVE #05 체육관',
+    progressStatus: '진행 중',
+    hintUsed: false,
+    lastUpdatedAt: '13:44',
+  },
+  {
+    teamName: '6조',
+    currentStage: 'ARCHIVE #07 마지막 기록',
+    progressStatus: '완료',
+    hintUsed: true,
+    lastUpdatedAt: '13:49',
+  },
+  {
+    teamName: '7조',
+    currentStage: 'ARCHIVE #02 교육관',
+    progressStatus: '대기',
+    hintUsed: false,
+    lastUpdatedAt: '13:28',
+  },
+] as const
+
 type Phase = 'story' | 'boot' | 'ready' | 'archive-home' | 'archive-detail'
+type ProgressStatus = (typeof teamProgressRows)[number]['progressStatus']
+
+function getProgressStatusClass(status: ProgressStatus) {
+  if (status === '완료') {
+    return 'is-complete'
+  }
+
+  if (status === '확인 필요') {
+    return 'is-attention'
+  }
+
+  if (status === '대기') {
+    return 'is-idle'
+  }
+
+  if (status === '진입') {
+    return 'is-entered'
+  }
+
+  return 'is-active'
+}
 
 function ArchiveSignalOrb() {
   return (
@@ -69,7 +142,87 @@ function ArchiveSignalOrb() {
   )
 }
 
-function App() {
+function AdminDashboard() {
+  const activeTeams = teamProgressRows.filter(
+    (row) => row.progressStatus === '진행 중',
+  ).length
+  const hintUsedTeams = teamProgressRows.filter((row) => row.hintUsed).length
+  const completedTeams = teamProgressRows.filter(
+    (row) => row.progressStatus === '완료',
+  ).length
+
+  return (
+    <main className="admin-shell">
+      <section className="admin-panel">
+        <header className="admin-header">
+          <div>
+            <p className="admin-kicker">RESTORED ARCHIVE MONITOR</p>
+            <h1 className="admin-title">관리자 진행 현황</h1>
+          </div>
+          <p className="admin-timestamp">LAST SYNC 13:50</p>
+        </header>
+
+        <div className="admin-summary" aria-label="팀 진행 요약">
+          <div className="admin-summary-item">
+            <span>전체 조</span>
+            <strong>{teamProgressRows.length}</strong>
+          </div>
+          <div className="admin-summary-item">
+            <span>진행 중</span>
+            <strong>{activeTeams}</strong>
+          </div>
+          <div className="admin-summary-item">
+            <span>힌트 사용</span>
+            <strong>{hintUsedTeams}</strong>
+          </div>
+          <div className="admin-summary-item">
+            <span>완료</span>
+            <strong>{completedTeams}</strong>
+          </div>
+        </div>
+
+        <div className="admin-table-card">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>조 이름</th>
+                <th>현재 단계</th>
+                <th>진행 상태</th>
+                <th>힌트 사용 여부</th>
+                <th>마지막 업데이트</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teamProgressRows.map((row) => (
+                <tr key={row.teamName}>
+                  <td className="admin-team-name">{row.teamName}</td>
+                  <td className="admin-stage">{row.currentStage}</td>
+                  <td>
+                    <span
+                      className={`admin-status ${getProgressStatusClass(
+                        row.progressStatus,
+                      )}`}
+                    >
+                      {row.progressStatus}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={row.hintUsed ? 'admin-hint-used' : 'admin-hint-none'}>
+                      {row.hintUsed ? '사용' : '미사용'}
+                    </span>
+                  </td>
+                  <td className="admin-updated">{row.lastUpdatedAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+function OnboardingApp() {
   const [phase, setPhase] = useState<Phase>('story')
   const [storyIndex, setStoryIndex] = useState(0)
   const [visibleBootLines, setVisibleBootLines] = useState(0)
@@ -318,6 +471,12 @@ function App() {
       </div>
     </main>
   )
+}
+
+function App() {
+  const isAdminRoute = window.location.pathname === '/admin'
+
+  return isAdminRoute ? <AdminDashboard /> : <OnboardingApp />
 }
 
 export default App

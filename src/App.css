@@ -610,6 +610,202 @@
   animation: settle 600ms ease forwards;
 }
 
+.admin-shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 48px;
+  background:
+    radial-gradient(circle at 74% 0%, rgba(157, 223, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 16% 12%, rgba(169, 112, 255, 0.06), transparent 26%),
+    #000000;
+  color: var(--text-primary);
+}
+
+.admin-panel {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.admin-kicker,
+.admin-timestamp,
+.admin-table th,
+.admin-status,
+.admin-updated {
+  font-family: var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-kicker {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-title {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.admin-timestamp {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.admin-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0 18px;
+}
+
+.admin-summary-item {
+  min-height: 104px;
+  padding: 20px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 72%),
+    radial-gradient(circle at 88% 12%, rgba(157, 223, 255, 0.08), transparent 36%),
+    var(--bg-surface);
+}
+
+.admin-summary-item span {
+  display: block;
+  margin-bottom: 16px;
+  font-family: var(--font-story);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.admin-summary-item strong {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.admin-table-card {
+  overflow: hidden;
+  border: 1px solid var(--line-subtle);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 100%),
+    var(--bg-surface);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 18px 20px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.admin-table td {
+  color: var(--text-secondary);
+  font-family: var(--font-story);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-team-name,
+.admin-stage {
+  color: var(--text-primary);
+}
+
+.admin-stage {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.admin-status {
+  display: inline-flex;
+  min-width: 76px;
+  justify-content: center;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.admin-status.is-active {
+  color: var(--success);
+  border-color: rgba(154, 240, 195, 0.18);
+  background: rgba(154, 240, 195, 0.055);
+}
+
+.admin-status.is-attention {
+  color: var(--accent-lime);
+  border-color: rgba(201, 255, 61, 0.2);
+  background: rgba(201, 255, 61, 0.05);
+}
+
+.admin-status.is-complete {
+  color: var(--accent-blue);
+  border-color: rgba(157, 223, 255, 0.2);
+  background: rgba(157, 223, 255, 0.05);
+}
+
+.admin-status.is-entered,
+.admin-status.is-idle {
+  color: var(--text-muted);
+}
+
+.admin-hint-used {
+  color: var(--accent-lime);
+}
+
+.admin-hint-none {
+  color: var(--text-muted);
+}
+
+.admin-updated {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 @keyframes signalFloat {
   0%,
   100% {
@@ -675,5 +871,31 @@
     height: 844px;
     min-height: 844px;
     margin-block: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell {
+    padding: 24px;
+  }
+
+  .admin-header {
+    display: block;
+  }
+
+  .admin-timestamp {
+    margin-top: 18px;
+  }
+
+  .admin-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-table-card {
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    min-width: 760px;
   }
 }
