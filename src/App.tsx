@@ -40,6 +40,8 @@ const archives = [
   { id: '07', name: '마지막 기록', status: '잠금', locked: true },
 ] as const
 
+const teamOptions = ['1조', '2조', '3조', '4조', '5조', '6조', '7조'] as const
+
 const teamProgressRows = [
   {
     teamName: '1조',
@@ -92,7 +94,7 @@ const teamProgressRows = [
   },
 ] as const
 
-type Phase = 'story' | 'boot' | 'ready' | 'archive-home' | 'archive-detail'
+type Phase = 'story' | 'boot' | 'ready' | 'team-select' | 'archive-home' | 'archive-detail'
 type ProgressStatus = (typeof teamProgressRows)[number]['progressStatus']
 
 function getProgressStatusClass(status: ProgressStatus) {
@@ -227,6 +229,7 @@ function OnboardingApp() {
   const [storyIndex, setStoryIndex] = useState(0)
   const [visibleBootLines, setVisibleBootLines] = useState(0)
   const [signalShift, setSignalShift] = useState({ x: 0, y: 0 })
+  const [selectedTeam, setSelectedTeam] = useState<(typeof teamOptions)[number] | null>(null)
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -260,6 +263,11 @@ function OnboardingApp() {
   }
 
   const handleStart = () => {
+    setPhase('team-select')
+  }
+
+  const handleTeamSelect = (teamName: (typeof teamOptions)[number]) => {
+    setSelectedTeam(teamName)
     setPhase('archive-home')
   }
 
@@ -367,6 +375,33 @@ function OnboardingApp() {
           </section>
         )}
 
+        {phase === 'team-select' && (
+          <section className="team-select-screen" aria-labelledby="team-select-title">
+            <div className="team-select-panel reveal-soft">
+              <p className="team-select-kicker">TEAM ACCESS REQUIRED</p>
+              <h1 id="team-select-title" className="team-select-title">
+                조를 선택하세요
+              </h1>
+              <p className="team-select-description">
+                접속할 탐색 조를 선택하면 기록 보관소가 복구됩니다.
+              </p>
+
+              <div className="team-option-grid" aria-label="조 선택">
+                {teamOptions.map((teamName) => (
+                  <button
+                    key={teamName}
+                    type="button"
+                    className="team-option-button"
+                    onClick={() => handleTeamSelect(teamName)}
+                  >
+                    {teamName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {phase === 'archive-home' && (
           <section
             className="archive-screen archive-home-screen"
@@ -383,56 +418,114 @@ function OnboardingApp() {
               <ArchiveSignalOrb />
             </div>
 
-            <div className="archive-home-top reveal-soft">
-              <p className="archive-system-label">ARCHIVE SYSTEM</p>
-              <div className="archive-rule" aria-hidden="true" />
-              <div className="archive-home-copy" lang="ko">
-                <p>접속이 복구되었습니다.</p>
-                <p>
-                  복구되지 않은 기록:
-                  <br />
-                  7개
-                </p>
-                <p>빛은 아직 완전히 사라지지 않았습니다.</p>
+            <header className="home-header reveal-soft">
+              <div>
+                <p className="home-app-name">사라진 빛을 찾아서</p>
+                <h1 className="home-title">기록 보관소</h1>
+                <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
-              <div className="archive-rule" aria-hidden="true" />
+              <div className="home-actions" aria-label="빠른 메뉴">
+                <button type="button" className="home-icon-button" aria-label="진행 현황">
+                  ↆ
+                </button>
+                <button type="button" className="home-icon-button" aria-label="설정">
+                  ·
+                </button>
+              </div>
+            </header>
+
+            <div className="home-card-grid">
+              <section className="home-card home-card-now reveal-soft">
+                <div className="home-now-header">
+                  <span className="home-card-label">CURRENT OBJECTIVE</span>
+                  <span className="home-now-badge">진행 중</span>
+                </div>
+                <div className="home-now-body">
+                  <div>
+                    <p className="home-now-location">현재 위치</p>
+                    <h2 className="home-now-title">본당</h2>
+                  </div>
+                  <p className="home-now-copy">
+                    첫 번째 기록을 열고, 사라진 빛의 흔적을 확인하세요.
+                  </p>
+                </div>
+                <div className="home-task-list" aria-label="지금 해야 할 일">
+                  <span>01 기록 열기</span>
+                  <span>02 단서 확인</span>
+                  <span>03 다음 신호 찾기</span>
+                </div>
+              </section>
+
+              <button
+                type="button"
+                className="home-card home-card-primary reveal-soft"
+                onClick={() => handleArchiveOpen('01')}
+              >
+                <span className="home-card-label">ARCHIVE #01</span>
+                <strong className="home-mission-number">01</strong>
+                <span className="home-card-title">첫 번째 기록</span>
+                <span className="home-card-meta">본당 기록 복구 가능</span>
+                <span className="home-card-status">탭하여 시작</span>
+              </button>
+
+              <section className="home-card home-card-progress reveal-soft">
+                <div className="home-progress-ring" aria-hidden="true">
+                  <span>0/7</span>
+                </div>
+                <p className="home-card-title">기록 복구율</p>
+                <div className="home-progress-bar" aria-hidden="true">
+                  <span />
+                </div>
+              </section>
+
+              <section className="home-card home-card-signal reveal-soft">
+                <p className="home-card-label">LAST SIGNAL FOUND</p>
+                <p className="home-signal-message">
+                  빛은 아직 완전히 사라지지 않았습니다.
+                </p>
+              </section>
+
+              <section className="home-card home-card-archive reveal-soft">
+                <div className="home-card-row">
+                  <div>
+                    <p className="home-card-label">ARCHIVE INDEX</p>
+                    <p className="home-card-title">전체 아카이브</p>
+                  </div>
+                  <span className="home-archive-count">1 / 7</span>
+                </div>
+                <div className="home-archive-grid" aria-label="아카이브 잠금 상태">
+                  {archives.map((archive) => (
+                    <span
+                      key={archive.id}
+                      className={archive.locked ? 'is-locked' : 'is-unlocked'}
+                    >
+                      {archive.id}
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              <section className="home-card home-card-mini reveal-soft">
+                <p className="home-card-label">CURRENT TEAM</p>
+                <p className="home-card-title">{selectedTeam ?? '탐색팀'}</p>
+                <p className="home-card-meta">접속 유지 중</p>
+              </section>
+
+              <button
+                type="button"
+                className="home-card home-card-cta reveal-soft"
+                onClick={() => handleArchiveOpen('01')}
+              >
+                지금 해야 할 일 시작하기
+              </button>
             </div>
 
-            <div className="archive-list" role="list" aria-label="복구된 기록 목록">
-              {archives.map((archive, index) => {
-                const cardClassName = archive.locked
-                  ? 'archive-card is-locked'
-                  : 'archive-card is-unlocked'
-
-                return (
-                  <button
-                    key={archive.id}
-                    type="button"
-                    className={cardClassName}
-                    style={{ animationDelay: `${index * 300}ms` }}
-                    onClick={() => handleArchiveOpen(archive.id)}
-                    disabled={archive.locked}
-                    role="listitem"
-                    aria-label={`ARCHIVE #${archive.id} ${archive.name} ${archive.status}`}
-                  >
-                    <div className="archive-card-header">
-                      <span className="archive-card-id">ARCHIVE #{archive.id}</span>
-                      {archive.locked ? (
-                        <span className="archive-lock" aria-hidden="true">
-                          LOCKED
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="archive-card-title" lang="ko">
-                      {archive.name}
-                    </p>
-                    <p className="archive-card-status" lang="ko">
-                      상태: {archive.status}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
+            <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
+              <button type="button" className="is-active">홈</button>
+              <button type="button">아카이브</button>
+              <button type="button">진행현황</button>
+              <button type="button">힌트</button>
+            </nav>
           </section>
         )}
 
