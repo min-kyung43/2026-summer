@@ -1676,6 +1676,15 @@
   line-height: 1.15;
 }
 
+.admin-team-note {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-family: var(--font-story);
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
 .admin-team-progress {
   display: flex;
   flex-direction: column;

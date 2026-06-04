@@ -140,12 +140,20 @@ function createFallbackTeamRecord(teamName: TeamOption): TeamRecord {
   }
 }
 
+function createFallbackAdminTeams() {
+  return teamOptions.map((teamName) => createFallbackTeamRecord(teamName))
+}
+
 function getStageId(stage: number) {
   return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
 }
 
 function getArchiveByStage(stage: number) {
   return archives[Math.max(0, Math.min(stage - 1, archives.length - 1))]
+}
+
+function getNextArchiveByStage(stage: number) {
+  return archives[Math.max(0, Math.min(stage, archives.length - 1))]
 }
 
 type AdminDashboardProps = {
@@ -171,18 +179,18 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
       const { data, error } = await supabase
         .from('teams')
         .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
-        .order('team_name', { ascending: true })
+        .order('team_code', { ascending: true })
 
       if (!isMounted) {
         return
       }
 
-      if (error) {
-        setAdminError('팀 목록을 불러오지 못했습니다.')
-        setTeams([])
+      if (error || !data || data.length === 0) {
+        setAdminError('연결된 팀 데이터가 없어 기본 조별 보드를 표시합니다.')
+        setTeams(createFallbackAdminTeams())
       } else {
         setAdminError('')
-        setTeams(data ?? [])
+        setTeams(data)
       }
 
       setIsLoadingTeams(false)
@@ -259,7 +267,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <div>
                     <p className="admin-team-name">{row.team_name} - 진행 상황</p>
                     <p className="admin-stage">
-                      현재 기록 · ARCHIVE #{getStageId(row.current_stage)}
+                      {row.team_code} · 현재 기록 ARCHIVE #{getStageId(row.current_stage)}
                     </p>
                   </div>
                   <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
@@ -270,6 +278,9 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <div className="admin-team-location">
                     <span>현재 위치</span>
                     <strong>{getArchiveByStage(row.current_stage).name}</strong>
+                    <p className="admin-team-note">
+                      다음 기록 · {row.is_finished ? '모든 기록 복구 완료' : getNextArchiveByStage(row.current_stage).name}
+                    </p>
                   </div>
                   <div className="admin-team-progress">
                     <div className="admin-team-progress-track" aria-hidden="true">
@@ -285,11 +296,11 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                 </div>
                 <div className="admin-team-metrics">
                   <div>
-                    <span>완료</span>
+                    <span>복구된 기록</span>
                     <strong>{row.completed_count}</strong>
                   </div>
                   <div>
-                    <span>힌트</span>
+                    <span>힌트 사용</span>
                     <strong className={row.hint_count > 0 ? 'admin-hint-used' : 'admin-hint-none'}>
                       {row.hint_count}
                     </strong>
