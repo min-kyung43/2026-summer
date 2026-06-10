@@ -13,17 +13,25 @@
 .screen-frame {
   position: relative;
   width: min(100%, 390px);
+  height: 100vh;
+  height: 100svh;
   min-height: 100vh;
   min-height: 100svh;
   padding-inline: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%),
     linear-gradient(180deg, var(--bg-screen), var(--bg-surface));
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   box-sizing: border-box;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
     0 0 80px rgba(0, 0, 0, 0.55);
+}
+
+.screen-frame::-webkit-scrollbar {
+  display: none;
 }
 
 .screen-overlay {
@@ -92,6 +100,24 @@
   font-weight: 300;
   line-height: 1.8;
   color: var(--text-primary);
+}
+
+.story-copy,
+.home-subtitle,
+.home-signal-copy,
+.home-now-description,
+.hint-card-copy,
+.problem-main-copy p,
+.problem-intro-lines p,
+.problem-story-copy,
+.problem-question-copy,
+.problem-tip,
+.problem-hint-box p,
+.archive-card-status,
+.archive-detail-copy,
+.reset-modal p {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .story-copy-body {
@@ -511,9 +537,8 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .home-app-name,
@@ -550,10 +575,11 @@
 }
 
 .home-actions {
+  width: 100%;
   display: flex;
   gap: 8px;
-  padding-top: 4px;
   align-items: center;
+  justify-content: space-between;
 }
 
 .home-icon-button {
@@ -565,26 +591,40 @@
     radial-gradient(circle at 45% 20%, rgba(232, 241, 255, 0.14), transparent 42%),
     #151515;
   color: #e8f1ff;
-  font-family: var(--font-mono);
-  font-size: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.home-icon-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   line-height: 1;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .home-reset-button {
   min-height: 38px;
-  padding: 0 12px;
+  min-width: 84px;
+  padding: 0 14px;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 999px;
   background:
     radial-gradient(circle at 45% 20%, rgba(255, 255, 255, 0.08), transparent 42%),
     #151515;
   color: rgba(255, 255, 255, 0.84);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: 0.14em;
+  font-family: var(--font-story);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
   text-transform: uppercase;
+  white-space: nowrap;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -737,12 +777,22 @@
   line-height: 1.65;
 }
 
+.problem-main-copy p,
+.problem-intro-lines p,
+.problem-story-copy,
+.archive-home-copy,
+.archive-detail-copy {
+  font-size: 18px;
+}
+
 .home-card-progress {
   grid-column: 1 / -1;
-  min-height: 138px;
+  min-height: 148px;
+  padding: 20px 20px 18px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 0;
+  justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
 }
@@ -882,7 +932,7 @@
 .home-progress-value {
   position: relative;
   z-index: 1;
-  margin: 7px 0 0;
+  margin: 15px 0 5px;
   font-family: var(--font-mono);
   color: #f7fbff;
   font-size: 29px;
@@ -898,6 +948,7 @@
 .home-progress-bar {
   width: 100%;
   height: 5px;
+  margin-top: 14px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
@@ -1193,12 +1244,12 @@
 }
 
 .problem-question-copy {
-  margin: 18px 0 0;
-  color: rgba(240, 238, 232, 0.72);
+  margin: 18px 0 30px;
+  color: rgba(240, 238, 232, 0.86);
   font-family: var(--font-story);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 300;
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
 .problem-bottom-row {
@@ -1260,6 +1311,17 @@
   min-width: 85px;
   background: rgba(255, 255, 255, 0.92);
   color: #050608;
+}
+
+.problem-restored-screen .problem-bottom-row {
+  right: 12px;
+  left: 12px;
+  gap: 24px;
+}
+
+.problem-restored-screen .problem-pill-button.is-bright {
+  min-width: 122px;
+  padding-inline: 18px;
 }
 
 .qr-scan-panel {
@@ -1365,7 +1427,7 @@
 }
 
 .problem-puzzle-copy h1 {
-  margin-bottom: 72px;
+  margin-bottom: 62px;
   font-size: 18px;
   line-height: 1.4;
 }
@@ -1536,6 +1598,19 @@
     radial-gradient(circle at top right, rgba(157, 223, 255, 0.11), transparent 36%),
     radial-gradient(circle at bottom left, rgba(169, 112, 255, 0.08), transparent 38%),
     var(--bg-surface-soft);
+}
+
+.archive-card.is-current {
+  border-color: rgba(154, 240, 195, 0.28);
+}
+
+.archive-card.is-restored {
+  border-color: rgba(157, 223, 255, 0.16);
+}
+
+.archive-card.is-restored .archive-lock,
+.archive-card.is-restored .archive-card-status {
+  color: rgba(157, 223, 255, 0.74);
 }
 
 .archive-card-header {
@@ -2121,6 +2196,24 @@
     height: 844px;
     min-height: 844px;
     margin-block: auto;
+  }
+}
+
+@media (max-height: 843px) {
+  .screen-frame {
+    height: 100vh;
+    height: 100svh;
+    min-height: 100vh;
+    min-height: 100svh;
+    margin-block: 0;
+  }
+
+  .story-screen,
+  .boot-screen,
+  .team-select-screen,
+  .archive-screen,
+  .problem-screen {
+    min-height: 844px;
   }
 }
 

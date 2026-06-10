@@ -743,7 +743,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
-    setPhase('step-intro')
+    setPhase('archive-home')
   }
 
   const handleQrScanStart = async () => {
@@ -962,11 +962,6 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         {phase === 'archive-home' && (
           <section className="archive-screen archive-home-screen">
             <header className="home-header reveal-soft">
-              <div>
-                <p className="home-app-name">사라진 빛을 찾아서</p>
-                <h1 className="home-title">접속이 복구되었습니다.</h1>
-                <p className="home-subtitle">복구되지 않은 기록 7개</p>
-              </div>
               <div className="home-actions" aria-label="빠른 메뉴">
                 <button
                   type="button"
@@ -974,7 +969,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                   aria-label="조 선택 화면으로 이동"
                   onClick={() => setPhase('team-select')}
                 >
-                  ·
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M15 18L9 12L15 6" />
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -983,6 +980,15 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 >
                   새로 시작
                 </button>
+              </div>
+              <div>
+                <p className="home-app-name">사라진 빛을 찾아서</p>
+                <h1 className="home-title">
+                  접속이
+                  <br />
+                  복구되었습니다.
+                </h1>
+                <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
             </header>
 
@@ -1047,26 +1053,46 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </header>
 
             <div className="archive-list">
-              {archives.map((archive) => (
-                <button
-                  key={archive.id}
-                  type="button"
-                  className={`archive-card ${archive.locked ? 'is-locked' : 'is-unlocked'}`}
-                  disabled={archive.locked}
-                  onClick={() => handleArchiveOpen(archive.id)}
-                >
-                  <div className="archive-card-header">
-                    <span className="archive-card-id">ARCHIVE #{archive.id}</span>
-                    <span className="archive-lock">{archive.locked ? 'LOCKED' : 'OPEN'}</span>
-                  </div>
-                  <p className="archive-card-title">
-                    {archive.locked ? '기록 복구 필요' : archive.name}
-                  </p>
-                  <p className="archive-card-status">
-                    {archive.locked ? '아직 신호가 잠겨 있습니다.' : '첫 번째 조사를 시작할 수 있습니다.'}
-                  </p>
-                </button>
-              ))}
+              {archives.map((archive, index) => {
+                const archiveStage = index + 1
+                const isRestored = archiveStage < challengeIndex
+                const isCurrent = archiveStage === challengeIndex
+                const isLocked = archiveStage > challengeIndex
+
+                return (
+                  <button
+                    key={archive.id}
+                    type="button"
+                    className={[
+                      'archive-card',
+                      isLocked ? 'is-locked' : 'is-unlocked',
+                      isRestored ? 'is-restored' : '',
+                      isCurrent ? 'is-current' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={isLocked}
+                    onClick={() => handleArchiveOpen(archive.id)}
+                  >
+                    <div className="archive-card-header">
+                      <span className="archive-card-id">ARCHIVE #{archive.id}</span>
+                      <span className="archive-lock">
+                        {isLocked ? 'LOCKED' : isRestored ? 'RESTORED' : 'OPEN'}
+                      </span>
+                    </div>
+                    <p className="archive-card-title">
+                      {isLocked ? '기록 복구 필요' : archive.name}
+                    </p>
+                    <p className="archive-card-status">
+                      {isLocked
+                        ? '아직 신호가 잠겨 있습니다.'
+                        : isRestored
+                          ? '이미 복구된 기록입니다.'
+                          : `${archive.name} 조사를 시작할 수 있습니다.`}
+                    </p>
+                  </button>
+                )
+              })}
             </div>
 
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
@@ -1249,9 +1275,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="problem-puzzle-copy reveal-soft">
               <h1>
-                {currentProblem.questionLabel}
+                문제를 보고
                 <br />
-                입력하십시오.
+                정답을 입력해주세요.
               </h1>
               <p className="problem-question-copy">{currentProblem.question}</p>
               <label className="problem-code-field">
@@ -1273,7 +1299,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="problem-bottom-row">
               <div>
-                <p className="problem-tip">{currentProblem.tip}</p>
+                {challengeIndex > 1 ? <p className="problem-tip">{currentProblem.tip}</p> : null}
                 <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
                   {archives.map((archive) => (
                     <span
@@ -1333,7 +1359,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 className="problem-pill-button is-bright"
                 onClick={handleNextSignal}
               >
-                {challengeIndex >= problemStages.length ? '여정 완료' : '다음 신호'}
+                {challengeIndex >= problemStages.length ? '여정 완료' : '대시보드로 이동'}
               </button>
             </div>
           </section>
