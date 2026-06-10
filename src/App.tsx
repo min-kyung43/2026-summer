@@ -45,6 +45,170 @@ const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 const firstArchiveQrValue = 'ARCHIVE-01-NEXT'
 
+const problemStages = [
+  {
+    archiveId: '01',
+    title: '봉인된 예배당',
+    intro: [
+      '탐색팀은 오래전에 닫힌 본당의 문 앞에 도착한다.',
+      '문틈 사이로 아주 약한 빛이 새어 나오지만, 안쪽은 여전히 침묵에 잠겨 있다.',
+      '입구의 기록 장치는 첫 기록이 기억의 순서로만 열린다고 말한다.',
+    ],
+    story: [
+      '본당의 문은 열렸지만, 그 안은 여전히 오래된 침묵으로 가득하다.',
+      '바닥에 남은 작은 신호가 첫 번째 단서를 가리키고 있다.',
+      '이 문을 넘어야만 빛의 흔적이 다음 기록으로 이어진다.',
+    ],
+    questionLabel: '문제',
+    question: '다음 숫자 중 가장 작은 수를 고르시오.',
+    answer: '1',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '첫 번째 기록은 본당 아래, 기억이 보관된 곳에 남아 있다.',
+    actionText: 'QR 스캔 시작',
+    tip: '본당 입구에 남은 신호를 스캔하십시오.',
+    state: 'QR 신호 대기',
+    resultLabel: '첫 번째 기록',
+  },
+  {
+    archiveId: '02',
+    title: '잔향의 복도',
+    intro: [
+      '복도 벽면에는 끊어지고 이어지는 음성 기록이 남아 있다.',
+      '사라진 이름들이 낮은 떨림처럼 벽을 따라 흐르고 있다.',
+      '소리는 지워지지 않았다. 다만 순서를 잃었을 뿐이다.',
+    ],
+    story: [
+      '복도 끝에 놓인 장치는 마지막 문장을 기다리고 있다.',
+      '흐트러진 기록을 다시 이어 붙여야 다음 장소의 문이 열린다.',
+      '신호는 희미하지만, 방향은 분명하게 남아 있다.',
+    ],
+    questionLabel: '문제',
+    question: '다음 글자들을 올바른 순서로 읽으면 무엇이 되는가? `빛 / 을 / 찾 / 아 / 서`',
+    answer: '빛을 찾아서',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '다음 기록은 소리가 끝나는 곳, 지하의 작은 방에 있다.',
+    actionText: '기록 열기',
+    tip: '끊어진 음성을 하나의 문장으로 이어 보십시오.',
+    state: '기록 복구 중',
+    resultLabel: '둘째 기록',
+  },
+  {
+    archiveId: '03',
+    title: '침묵의 방',
+    intro: [
+      '지하의 작은 방은 소리를 삼켜버릴 만큼 조용하다.',
+      '벽에는 지워진 이름들이 남아 있고, 중앙에는 오래된 기록책이 놓여 있다.',
+      '누군가가 숨긴 흔적을 다시 읽어야만 빛의 방향이 드러난다.',
+    ],
+    story: [
+      '이 방은 기록을 숨기기 위해 만들어졌지만, 동시에 기억을 지키는 공간이기도 하다.',
+      '지워진 이름들 사이에 아직 남아 있는 단어가 있다.',
+      '그 단어가 다음 기록을 향한 통로를 열어 준다.',
+    ],
+    questionLabel: '문제',
+    question: '빛을 잃은 세상에서 다시 일어서는 마음을 뜻하는 단어는?',
+    answer: '소망',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '소망은 위로 올라간다. 다음 기록은 창이 많은 층에 있다.',
+    actionText: '기록 열기',
+    tip: '지워진 기록 속에서 살아남은 단어를 찾으십시오.',
+    state: '기록 복구 중',
+    resultLabel: '셋째 기록',
+  },
+  {
+    archiveId: '04',
+    title: '창문 많은 층',
+    intro: [
+      '창문이 많은 층에 오르자 바깥은 이미 어둠으로 덮여 있다.',
+      '유리창은 세상을 비추지 못하고, 오히려 검은 거울처럼 빛을 되돌려 보낸다.',
+      '반사광 속에는 다음 방향을 가리키는 작은 표시가 남아 있다.',
+    ],
+    story: [
+      '이곳의 기록은 빛이 흘러간 방향을 정확히 맞혀야만 열린다.',
+      '한 번 멈춘 빛은 다시 흐르기 위해 올바른 방향을 필요로 한다.',
+      '탐색팀은 멈춘 시선을 다시 위로 돌려야 한다.',
+    ],
+    questionLabel: '문제',
+    question: '다음 방향 중 “위”를 뜻하는 것을 고르시오.',
+    answer: '상',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '빛은 위로만 오르지 않는다. 더 높은 곳, 종탑 아래로 이어진다.',
+    actionText: '기록 열기',
+    tip: '반사된 빛이 가리키는 방향을 따라가십시오.',
+    state: '기록 복구 중',
+    resultLabel: '넷째 기록',
+  },
+  {
+    archiveId: '05',
+    title: '종탑 아래',
+    intro: [
+      '종탑 아래는 오래된 경보 장치와 기록 서버가 함께 묻혀 있는 곳이다.',
+      '종이 울릴 때마다 누군가의 이름과 사건이 하나씩 복원되었다고 전해진다.',
+      '마지막 울림의 횟수가 맞아야 잠긴 장치가 열린다.',
+    ],
+    story: [
+      '이 방의 기억은 소리의 횟수로 저장되어 있다.',
+      '작은 울림이라도 놓치면 다음 기록으로 이어지지 않는다.',
+      '탐색팀은 종소리 속에 남은 숫자를 세어야 한다.',
+    ],
+    questionLabel: '문제',
+    question: '다음 리듬이 울린 횟수를 세시오. `딩 - 딩 - 딩 - 딩 - 딩`',
+    answer: '5',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '다섯 번의 울림이 지나면, 수호자가 깨어나는 방으로 간다.',
+    actionText: '기록 열기',
+    tip: '종소리의 마지막 울림까지 놓치지 마십시오.',
+    state: '기록 복구 중',
+    resultLabel: '다섯째 기록',
+  },
+  {
+    archiveId: '06',
+    title: '수호자의 방',
+    intro: [
+      '문을 열자 거대한 기록 수호자가 잠들어 있는 방이 나타난다.',
+      '그는 적이 아니라, 오래된 진실을 지키기 위해 스스로 잠긴 존재처럼 보인다.',
+      '탐색팀이 마지막으로 보여줘야 할 것은 힘이 아니라, 함께 가려는 마음이다.',
+    ],
+    story: [
+      '수호자는 빛의 열쇠 조각을 쥔 채 오랜 시간 기록을 지켜 왔다.',
+      '그는 누가 더 빠른지를 묻지 않고, 누가 끝까지 함께 가는지를 묻고 있다.',
+      '진실은 경쟁이 아니라 연합 속에서 드러난다.',
+    ],
+    questionLabel: '문제',
+    question: '공동체를 가장 잘 설명하는 단어는 무엇인가?',
+    answer: '연합',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '연합이 이루어지면, 열쇠의 마지막 조각이 있는 곳이 열린다.',
+    actionText: '기록 열기',
+    tip: '수호자는 힘보다 마음을 먼저 본다.',
+    state: '기록 복구 중',
+    resultLabel: '여섯째 기록',
+  },
+  {
+    archiveId: '07',
+    title: '빛의 열쇠',
+    intro: [
+      '마지막 방은 처음의 어둠과는 조금 달랐다.',
+      '아주 작은 빛이 바닥에 떨어져 있었고, 그 빛은 조각난 열쇠들 사이를 따라 퍼지고 있었다.',
+      '탐색팀은 여정의 끝에서 빛이 마음과 믿음 속에서 다시 이어진다는 것을 깨닫는다.',
+    ],
+    story: [
+      '모든 장소를 지나온 끝에 남은 질문은 단 하나다.',
+      '빛은 다시 돌아올 수 있는가, 그리고 그 빛을 끝까지 선택할 수 있는가.',
+      '마지막 기록이 복구되면 봉인된 세상에 빛이 되돌아온다.',
+    ],
+    questionLabel: '최종 문제',
+    question: '마지막 열쇠를 완성하는 문장을 고르시오.',
+    answer: '빛은 다시 돌아온다',
+    clueTitle: '문제를 풀었을 때 얻는 단서',
+    clue: '빛의 열쇠가 완성되었다. 이제 봉인은 풀리고, 세상은 다시 밝아진다.',
+    actionText: '기록 복구',
+    tip: '이제 마지막 기록만 남았습니다.',
+    state: '최종 해독',
+    resultLabel: '마지막 기록',
+  },
+] as const
+
 type Phase =
   | 'story'
   | 'boot'
@@ -62,6 +226,7 @@ type TeamOption = (typeof teamOptions)[number]
 type AppSession = {
   phase: Phase
   storyIndex: number
+  challengeIndex: number
   selectedTeam: TeamOption | null
   activeTeam: TeamRecord | null
   recoveryCode: string
@@ -101,6 +266,7 @@ function loadStoredSession(): Partial<AppSession> {
         ? parsedSession.phase
         : undefined,
       storyIndex: typeof parsedSession.storyIndex === 'number' ? parsedSession.storyIndex : undefined,
+      challengeIndex: typeof parsedSession.challengeIndex === 'number' ? parsedSession.challengeIndex : undefined,
       selectedTeam: isTeamOption(parsedSession.selectedTeam) ? parsedSession.selectedTeam : null,
       activeTeam: parsedSession.activeTeam ?? null,
       recoveryCode: typeof parsedSession.recoveryCode === 'string' ? parsedSession.recoveryCode : '',
@@ -154,6 +320,12 @@ function getArchiveByStage(stage: number) {
 
 function getNextArchiveByStage(stage: number) {
   return archives[Math.max(0, Math.min(stage, archives.length - 1))]
+}
+
+function normalizeAnswer(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[\s·,./'"“”‘’?!\-]/g, '')
 }
 
 type AdminDashboardProps = {
@@ -323,11 +495,16 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [storedSession] = useState(() => loadStoredSession())
   const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'story')
   const [storyIndex, setStoryIndex] = useState(storedSession.storyIndex ?? 0)
+  const [challengeIndex, setChallengeIndex] = useState(
+    Math.max(1, Math.min(storedSession.challengeIndex ?? 1, problemStages.length)),
+  )
   const [visibleBootLines, setVisibleBootLines] = useState(0)
   const [selectedTeam, setSelectedTeam] = useState<TeamOption | null>(storedSession.selectedTeam ?? null)
   const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(storedSession.activeTeam ?? null)
   const [isTeamSelectLoading, setIsTeamSelectLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
+  const [puzzleFeedback, setPuzzleFeedback] = useState('')
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [, setSecretAdminTapCount] = useState(0)
   const [qrScannerStatus, setQrScannerStatus] = useState<'idle' | 'scanning' | 'found' | 'error'>(
     'idle',
@@ -336,6 +513,8 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const qrVideoRef = useRef<HTMLVideoElement | null>(null)
   const qrScannerControlsRef = useRef<IScannerControls | null>(null)
   const secretAdminTapTimerRef = useRef<number | null>(null)
+  const qrBypassTimerRef = useRef<number | null>(null)
+  const qrBypassTriggeredRef = useRef(false)
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -343,12 +522,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       JSON.stringify({
         phase,
         storyIndex,
+        challengeIndex,
         selectedTeam,
         activeTeam,
         recoveryCode,
       } satisfies AppSession),
     )
-  }, [activeTeam, phase, recoveryCode, selectedTeam, storyIndex])
+  }, [activeTeam, challengeIndex, phase, recoveryCode, selectedTeam, storyIndex])
 
   useEffect(() => {
     if (!activeTeam?.team_code) {
@@ -426,6 +606,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       }
 
       qrScannerControlsRef.current?.stop()
+      if (qrBypassTimerRef.current !== null) {
+        window.clearTimeout(qrBypassTimerRef.current)
+      }
     }
   }, [])
 
@@ -441,6 +624,30 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
   const handleStart = () => {
     setPhase('team-select')
+  }
+
+  const handleOpenResetDialog = () => {
+    setIsResetDialogOpen(true)
+  }
+
+  const handleCancelReset = () => {
+    setIsResetDialogOpen(false)
+  }
+
+  const handleConfirmReset = () => {
+    window.localStorage.removeItem(appSessionStorageKey)
+    setPhase('story')
+    setStoryIndex(0)
+    setChallengeIndex(1)
+    setSelectedTeam(null)
+    setActiveTeam(null)
+    setRecoveryCode('')
+    setPuzzleFeedback('')
+    setVisibleBootLines(0)
+    setQrScannerStatus('idle')
+    setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
+    setIsTeamSelectLoading(false)
+    setIsResetDialogOpen(false)
   }
 
   const handleTeamSelect = async (teamName: TeamOption) => {
@@ -495,14 +702,56 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const handleArchiveOpen = (archiveId: string) => {
-    if (archiveId === '01') {
-      setQrScannerStatus('idle')
-      setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
-      setPhase('step-intro')
+    const nextChallengeIndex = Number.parseInt(archiveId, 10)
+
+    if (Number.isNaN(nextChallengeIndex)) {
+      return
     }
+
+    setChallengeIndex(Math.max(1, Math.min(nextChallengeIndex, problemStages.length)))
+    setRecoveryCode('')
+    setPuzzleFeedback('')
+    setQrScannerStatus('idle')
+    setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
+    setPhase('step-intro')
+  }
+
+  const handleContinueToStory = () => {
+    setPhase('step-story')
+  }
+
+  const handlePuzzleSubmit = () => {
+    const currentStage = problemStages[challengeIndex - 1]
+
+    if (normalizeAnswer(recoveryCode) !== normalizeAnswer(currentStage.answer)) {
+      setPuzzleFeedback('정답이 아닙니다. 신호를 다시 해독해 보세요.')
+      return
+    }
+
+    setPuzzleFeedback('')
+    setPhase('step-restored')
+  }
+
+  const handleNextSignal = () => {
+    if (challengeIndex >= problemStages.length) {
+      setPhase('archive-home')
+      return
+    }
+
+    setChallengeIndex((current) => Math.min(problemStages.length, current + 1))
+    setRecoveryCode('')
+    setPuzzleFeedback('')
+    setQrScannerStatus('idle')
+    setQrScannerMessage('현장 QR 신호를 스캔해야 기록을 열 수 있습니다.')
+    setPhase('step-intro')
   }
 
   const handleQrScanStart = async () => {
+    if (qrBypassTriggeredRef.current) {
+      qrBypassTriggeredRef.current = false
+      return
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
       setQrScannerStatus('error')
       setQrScannerMessage('이 브라우저에서는 카메라 접근을 사용할 수 없습니다.')
@@ -559,7 +808,36 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     }
   }
 
+  const handleQrScanButtonPressStart = () => {
+    if (phase !== 'step-intro' || challengeIndex !== 1) {
+      return
+    }
+
+    if (qrBypassTimerRef.current !== null) {
+      window.clearTimeout(qrBypassTimerRef.current)
+    }
+
+    qrBypassTriggeredRef.current = false
+    qrBypassTimerRef.current = window.setTimeout(() => {
+      qrBypassTimerRef.current = null
+      qrBypassTriggeredRef.current = true
+      qrScannerControlsRef.current?.stop()
+      qrScannerControlsRef.current = null
+      setQrScannerStatus('found')
+      setQrScannerMessage('테스트 신호가 확인되었습니다.')
+      window.setTimeout(() => setPhase('step-story'), 300)
+    }, 5000)
+  }
+
+  const handleQrScanButtonPressEnd = () => {
+    if (qrBypassTimerRef.current !== null) {
+      window.clearTimeout(qrBypassTimerRef.current)
+      qrBypassTimerRef.current = null
+    }
+  }
+
   const currentSlide = storySlides[storyIndex]
+  const currentProblem = problemStages[challengeIndex - 1]
 
   return (
     <main className="app-shell">
@@ -698,6 +976,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 >
                   ·
                 </button>
+                <button
+                  type="button"
+                  className="home-reset-button"
+                  onClick={handleOpenResetDialog}
+                >
+                  새로 시작
+                </button>
               </div>
             </header>
 
@@ -712,7 +997,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <button
                 type="button"
                 className="home-card home-card-now reveal-soft"
-                onClick={() => handleArchiveOpen('01')}
+                onClick={() => handleArchiveOpen(currentProblem.archiveId)}
               >
                 <div className="home-now-header">
                   <span className="home-card-label">CURRENT OBJECTIVE</span>
@@ -721,9 +1006,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 <div className="home-now-body">
                   <div>
                     <p className="home-now-location">현재 위치</p>
-                    <h2 className="home-now-title">본당</h2>
+                    <h2 className="home-now-title">{getArchiveByStage(challengeIndex).name}</h2>
                     <p className="home-now-description">
-                      복구 가능한 기록이 발견되었습니다.
+                      {currentProblem.title}의 기록이 발견되었습니다.
                     </p>
                   </div>
                 </div>
@@ -733,11 +1018,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <section className="home-card home-card-progress reveal-soft">
                 <p className="home-card-label">RESTORED RECORDS</p>
                 <p className="home-progress-value">
-                  0 <span>/ 7</span>
+                  {Math.max(0, challengeIndex - 1)} <span>/ 7</span>
                 </p>
                 <p className="home-card-title">복구된 기록</p>
                 <div className="home-progress-bar" aria-hidden="true">
-                  <span />
+                  <span style={{ width: `${Math.max(12, ((challengeIndex - 1) / problemStages.length) * 100)}%` }} />
                 </div>
               </section>
 
@@ -805,9 +1090,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <div className="hint-card-list">
               <section className="home-card hint-card reveal-soft">
                 <p className="home-card-label">CURRENT HINT</p>
-                <h2 className="hint-card-title">본당 신호</h2>
+                <h2 className="hint-card-title">{currentProblem.title}</h2>
                 <p className="hint-card-copy">
-                  사람들이 가장 많이 지나가지만, 아무도 오래 바라보지 않는 곳을 확인하세요.
+                  {currentProblem.clue}
                 </p>
               </section>
 
@@ -822,7 +1107,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <button
                 type="button"
                 className="home-card hint-start-card reveal-soft"
-                onClick={() => handleArchiveOpen('01')}
+                onClick={() => handleArchiveOpen(currentProblem.archiveId)}
               >
                 <span className="home-card-label">NEXT ACTION</span>
                 <span className="hint-card-title">첫 번째 조사로 이동</span>
@@ -849,38 +1134,59 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </button>
 
             <div className="problem-step-row reveal-soft">
-              <p className="problem-kicker">STEP 1 / 7</p>
-              <p className="problem-state">QR 신호 대기</p>
+              <p className="problem-kicker">
+                STEP {challengeIndex} / {problemStages.length}
+              </p>
+              <p className="problem-state">{currentProblem.state}</p>
             </div>
 
             <div className="problem-main-copy reveal-soft">
-              <h1>첫 번째 기록</h1>
-              <p>
-                현장에 숨겨진 QR 신호를 스캔하면
-                <br />
-                기록 복구가 시작됩니다.
-              </p>
+              <h1>{currentProblem.title}</h1>
+              <div className="problem-intro-lines">
+                {currentProblem.intro.map((line) => (
+                  <p key={`${currentProblem.archiveId}-intro-${line}`}>{line}</p>
+                ))}
+              </div>
             </div>
 
-            <div className="qr-scan-panel reveal-soft">
-              <div className={`qr-viewfinder is-${qrScannerStatus}`}>
-                <video ref={qrVideoRef} muted playsInline aria-label="QR 스캔 카메라 화면" />
-                <span aria-hidden="true" />
+            {challengeIndex === 1 ? (
+              <div className="qr-scan-panel reveal-soft">
+                <div className={`qr-viewfinder is-${qrScannerStatus}`}>
+                  <video ref={qrVideoRef} muted playsInline aria-label="QR 스캔 카메라 화면" />
+                  <span aria-hidden="true" />
+                </div>
+                <p className="qr-scan-message">{qrScannerMessage}</p>
+                <button
+                  type="button"
+                  className="problem-pill-button qr-scan-button"
+                  onClick={handleQrScanStart}
+                  onPointerDown={handleQrScanButtonPressStart}
+                  onPointerUp={handleQrScanButtonPressEnd}
+                  onPointerLeave={handleQrScanButtonPressEnd}
+                  onPointerCancel={handleQrScanButtonPressEnd}
+                  disabled={qrScannerStatus === 'scanning' || qrScannerStatus === 'found'}
+                >
+                  {qrScannerStatus === 'scanning'
+                    ? '스캔 중'
+                    : qrScannerStatus === 'found'
+                      ? '신호 확인'
+                      : currentProblem.actionText}
+                </button>
               </div>
-              <p className="qr-scan-message">{qrScannerMessage}</p>
-              <button
-                type="button"
-                className="problem-pill-button qr-scan-button"
-                onClick={handleQrScanStart}
-                disabled={qrScannerStatus === 'scanning' || qrScannerStatus === 'found'}
-              >
-                {qrScannerStatus === 'scanning'
-                  ? '스캔 중'
-                  : qrScannerStatus === 'found'
-                    ? '신호 확인'
-                    : 'QR 스캔 시작'}
-              </button>
-            </div>
+            ) : (
+              <div className="problem-bottom-row problem-intro-bottom">
+                <div>
+                  <p className="problem-tip">{currentProblem.tip}</p>
+                </div>
+                <button
+                  type="button"
+                  className="problem-pill-button"
+                  onClick={handleContinueToStory}
+                >
+                  {currentProblem.actionText}
+                </button>
+              </div>
+            )}
           </section>
         )}
 
@@ -896,20 +1202,23 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               HOME
             </button>
 
-            <p className="problem-kicker problem-floating-kicker">ARCHIVE #01</p>
+            <p className="problem-kicker problem-floating-kicker">ARCHIVE #{currentProblem.archiveId}</p>
 
             <div className="problem-story-copy reveal-soft">
-              <p>"...처음 빛이 사라졌을 때,</p>
-              <p>아무도 그것을 이상하게 생각하지 않았다."</p>
-              <p>"빛은 조용히 사라졌다."</p>
+              {currentProblem.story.map((line) => (
+                <p key={`${currentProblem.archiveId}-story-${line}`}>{line}</p>
+              ))}
             </div>
 
             <div className="problem-bottom-row">
               <div>
-                <p className="problem-tip">암호화된 신호를 해독하십시오.</p>
-                <div className="problem-progress" aria-label="진행 1/7">
+                <p className="problem-tip">{currentProblem.questionLabel}</p>
+                <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
                   {archives.map((archive) => (
-                    <span key={`story-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                    <span
+                      key={`story-progress-${archive.id}`}
+                      className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
+                    />
                   ))}
                 </div>
               </div>
@@ -918,7 +1227,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 className="problem-pill-button"
                 onClick={() => setPhase('step-puzzle')}
               >
-                암호 입력
+                문제 열기
               </button>
             </div>
           </section>
@@ -940,35 +1249,46 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="problem-puzzle-copy reveal-soft">
               <h1>
-                복구 코드를
+                {currentProblem.questionLabel}
                 <br />
                 입력하십시오.
               </h1>
+              <p className="problem-question-copy">{currentProblem.question}</p>
               <label className="problem-code-field">
-                <span>RECOVERY CODE</span>
+                <span>ANSWER</span>
                 <input
                   value={recoveryCode}
-                  onChange={(event) => setRecoveryCode(event.target.value)}
-                  aria-label="복구 코드"
+                  onChange={(event) => {
+                    setRecoveryCode(event.target.value)
+                    if (puzzleFeedback) {
+                      setPuzzleFeedback('')
+                    }
+                  }}
+                  aria-label="정답 입력"
+                  placeholder="정답을 입력하세요"
                 />
               </label>
+              {puzzleFeedback ? <p className="problem-feedback">{puzzleFeedback}</p> : null}
             </div>
 
             <div className="problem-bottom-row">
               <div>
-                <p className="problem-tip">Tip. 현장 퍼즐의 정답이 기록을 밝힙니다.</p>
-                <div className="problem-progress" aria-label="진행 1/7">
+                <p className="problem-tip">{currentProblem.tip}</p>
+                <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
                   {archives.map((archive) => (
-                    <span key={`puzzle-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                    <span
+                      key={`puzzle-progress-${archive.id}`}
+                      className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
+                    />
                   ))}
                 </div>
               </div>
               <button
                 type="button"
                 className="problem-pill-button is-bright"
-                onClick={() => setPhase('step-restored')}
+                onClick={handlePuzzleSubmit}
               >
-                복구
+                정답 확인
               </button>
             </div>
           </section>
@@ -980,37 +1300,40 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <div className="problem-glow problem-glow-warm" aria-hidden="true" />
 
             <div className="problem-restored-header reveal-soft">
-              <p className="problem-kicker is-restored">ARCHIVE #01 RESTORED</p>
-              <span>1/7</span>
+              <p className="problem-kicker is-restored">
+                ARCHIVE #{currentProblem.archiveId} RESTORED
+              </p>
+              <span>
+                {challengeIndex}/{problemStages.length}
+              </span>
             </div>
 
             <div className="problem-restored-copy reveal-soft">
-              <h1>
-                기록이
-                <br />
-                복구되었습니다.
-              </h1>
+              <h1>기록이 복구되었습니다.</h1>
               <div className="problem-hint-box">
-                <p>
-                  기록은 사람들이 가장 많이 지나가지만,
-                  <br />
-                  아무도 기억하지 않는 곳에 숨겨져 있다.
+                <p className="problem-answer-line">
+                  <span>정답</span> {currentProblem.answer}
                 </p>
+                <p>{currentProblem.clueTitle}</p>
+                <p>{currentProblem.clue}</p>
               </div>
             </div>
 
             <div className="problem-bottom-row">
-              <div className="problem-progress" aria-label="진행 1/7">
+              <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
                 {archives.map((archive) => (
-                  <span key={`restored-progress-${archive.id}`} className={archive.id === '01' ? 'is-active' : ''} />
+                  <span
+                    key={`restored-progress-${archive.id}`}
+                    className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
+                  />
                 ))}
               </div>
               <button
                 type="button"
                 className="problem-pill-button is-bright"
-                onClick={() => setPhase('archive-home')}
+                onClick={handleNextSignal}
               >
-                다음 신호
+                {challengeIndex >= problemStages.length ? '여정 완료' : '다음 신호'}
               </button>
             </div>
           </section>
@@ -1048,6 +1371,33 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </div>
           </section>
         )}
+
+        {isResetDialogOpen ? (
+          <div className="reset-modal-backdrop" role="presentation" onClick={handleCancelReset}>
+            <section
+              className="reset-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reset-modal-title"
+              aria-describedby="reset-modal-description"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="reset-modal-kicker">NEW START</p>
+              <h2 id="reset-modal-title">처음부터 다시 시작하시겠습니까?</h2>
+              <p id="reset-modal-description">
+                지금까지의 진행 기록은 초기화됩니다. 이 동작은 되돌릴 수 없습니다.
+              </p>
+              <div className="reset-modal-actions">
+                <button type="button" className="reset-modal-cancel" onClick={handleCancelReset}>
+                  취소
+                </button>
+                <button type="button" className="reset-modal-confirm" onClick={handleConfirmReset}>
+                  다시 시작
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </div>
     </main>
   )
@@ -1082,6 +1432,7 @@ function App() {
       JSON.stringify({
         phase: 'team-select',
         storyIndex: 0,
+        challengeIndex: 1,
         selectedTeam: null,
         activeTeam: null,
         recoveryCode: '',
