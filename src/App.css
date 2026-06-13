@@ -2544,9 +2544,90 @@
   .story-screen,
   .boot-screen,
   .team-select-screen,
-  .archive-screen,
-  .problem-screen {
+  .archive-screen {
     min-height: 844px;
+  }
+
+  .problem-screen {
+    min-height: 100svh;
+  }
+}
+
+@media (max-height: 760px) {
+  .problem-step-row {
+    top: 118px;
+  }
+
+  .problem-floating-kicker,
+  .problem-restored-header {
+    top: 92px;
+  }
+
+  .problem-puzzle-copy,
+  .problem-restored-copy {
+    top: 132px;
+  }
+
+  .problem-puzzle-copy h1,
+  .problem-restored-copy h1 {
+    font-size: 16px;
+    line-height: 1.32;
+  }
+
+  .problem-story-brief {
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .problem-question-copy {
+    margin: 10px 0 14px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .cipher-card {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .weekday-cipher-row {
+    font-size: 20px;
+  }
+
+  .coordinate-code {
+    font-size: 18px;
+  }
+
+  .problem-code-field input {
+    height: 30px;
+    font-size: 15px;
+  }
+
+  .problem-bottom-row {
+    bottom: 18px;
+  }
+
+  .problem-pill-button {
+    min-height: 46px;
+    min-width: 120px;
+    font-size: 13px;
+  }
+
+  .problem-hint-box {
+    margin-top: 42px;
+    padding: 22px 0;
+  }
+
+  .problem-hint-box p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .problem-next-location {
+    margin-top: 12px !important;
+    padding-top: 12px;
   }
 }
 

@@ -1655,7 +1655,6 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 <p className="problem-answer-line">
                   <span>정답</span> {currentProblem.answer}
                 </p>
-                <p>{currentProblem.clueTitle}</p>
                 <p>{currentProblem.clue}</p>
                 <p className="problem-next-location">
                   {challengeIndex >= problemStages.length
