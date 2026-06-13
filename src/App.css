@@ -1486,6 +1486,19 @@
   gap: 14px;
 }
 
+.bible-verse-line {
+  margin: 0;
+  color: rgba(247, 251, 255, 0.84);
+  font-family: var(--font-story);
+  font-size: 14px;
+  line-height: 1.58;
+}
+
+.bible-verse-line strong {
+  color: #9af0c3;
+  font-weight: 600;
+}
+
 .bible-cipher-grid {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -1818,6 +1831,11 @@
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.problem-hint-button:disabled {
+  opacity: 0.44;
+  cursor: default;
 }
 
 .problem-hint-button span {

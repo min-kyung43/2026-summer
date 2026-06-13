@@ -48,6 +48,7 @@ const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 const gameDurationMs = 60 * 60 * 1000
 const puzzleLockMs = 60 * 1000
 const maxWrongAttempts = 3
+const maxHintCount = 3
 const handSignalAnswer = '8'
 const circleCoordinateAnswer = '19767'
 
@@ -133,20 +134,20 @@ const problemStages = [
     archiveId: '04',
     title: '성경 암호 해독',
     intro: [
-      '오래된 두루마리 속에는 네 개의 숫자가 숨겨져 있다.',
-      '말씀 속 숫자를 모으고 계산식을 완성해야 한다.',
-      '마지막 구절에 도달하면 빈칸의 이름이 드러난다.',
+      '오래된 두루마리 속에 손상된 구절 하나가 남아 있다.',
+      '빈칸에 들어갈 이름을 복구해야 기록이 열린다.',
+      '띄어쓰기 없이 이어진 말씀의 이름을 입력해야 한다.',
     ],
     story: [
       '오래된 두루마리 속에는',
-      '네 개의 숫자가 숨겨져 있다.',
-      '말씀 속 숫자를 모으고 계산식을 완성하면',
-      '마지막 구절에 도달할 수 있다.',
+      '빈칸이 남은 구절 하나가 보존되어 있다.',
+      '손상된 이름을 바로 읽어낼 때',
+      '감추어진 기록이 다시 열린다.',
     ],
     questionLabel: '문제',
-    question: '마태복음 14장 17절, 창세기 7장 12절, 여호수아 6장 4절, 요한계시록 2장 1절에서 A, B, C, D를 찾고 (B-A×C)+D+A의 값을 구한 뒤 예레미야 [결과값]장 19절의 빈칸에 들어갈 말을 입력하시오.',
+    question: '과연 빈칸 [ ? ]에 들어갈 예수님의 말씀은 무엇일까요? 띄어쓰기 없이 입력하시오.',
     answer: '여호와이스라엘',
-    answers: ['여호와이스라엘', '여호와 이스라엘'],
+    answers: ['여호와이스라엘'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
     clue: '오랫동안 보존된 말씀과 기도가 잠들어 있는 곳. 조용함 속에서 기록은 더욱 선명해진다.',
     actionText: 'QR 스캔 시작',
@@ -196,13 +197,13 @@ const problemStages = [
     ],
     questionLabel: '문제',
     question: '주어진 알파벳들을 모두 사용하여 하나의 단어를 완성하시오.',
-    answer: 'ONE WORD',
-    answers: ['ONE WORD', 'ONEWORD'],
+    answer: 'NEW DOOR',
+    answers: ['NEW DOOR', 'NEWDOOR'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
     clue: '가장 높은 곳에서 희미한 빛이 감지된다. 아직 완전히 꺼지지 않은 흔적.',
     actionText: 'QR 스캔 시작',
     tip: '현장 QR 신호를 스캔하십시오.',
-    hint: "'한 단어'",
+    hint: "'새로운 문'",
     state: 'QR 신호 대기',
     resultLabel: '여섯째 기록',
     puzzleType: 'alphabetMix',
@@ -724,6 +725,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const currentProblem = getTeamProblemByStage(challengeIndex, teamForOrder)
   const currentArchive = getTeamArchiveByStage(challengeIndex, teamForOrder)
   const hasCompletedJourney = Boolean(activeTeam?.is_finished || (activeTeam?.completed_count ?? 0) >= problemStages.length)
+  const restoredRecordCount = Math.min(
+    problemStages.length,
+    Math.max(activeTeam?.completed_count ?? 0, challengeIndex - 1),
+  )
+  const hasReachedHintLimit = (activeTeam?.hint_count ?? 0) >= maxHintCount
   const nextArchive = challengeIndex >= problemStages.length
     ? null
     : getNextTeamArchiveByStage(challengeIndex, teamForOrder)
@@ -941,6 +947,15 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       return
     }
 
+    if (revealedHints[currentProblem.archiveId]) {
+      return
+    }
+
+    if (hasReachedHintLimit) {
+      setPuzzleFeedback(`힌트는 최대 ${maxHintCount}번까지만 사용할 수 있습니다.`)
+      return
+    }
+
     setRevealedHints((current) => ({
       ...current,
       [currentProblem.archiveId]: true,
@@ -1053,12 +1068,12 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'handSignals') {
       const handRows = [
-        [['☝'], ['='], ['🖐']],
+        [['☝️'], ['='], ['🖐']],
         [['✌'], ['='], ['✌']],
         [['🖖'], ['='], ['✌']],
         [['🖐'], ['='], ['🖖']],
         [['🖐'], ['='], ['✌']],
-        [['🖐', '☝'], ['='], ['☝']],
+        [['🖐', '☝️'], ['='], ['☝️']],
         [['🖐', '✌'], ['='], ['🖖']],
         [['🖐', '🖖'], ['='], ['?']],
       ]
@@ -1122,21 +1137,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher') {
       return (
         <div className="cipher-card bible-cipher-card" aria-label="성경 암호 문제">
-          <div className="bible-cipher-grid">
-            <span>A</span>
-            <p>마태복음 14장 17절: 떡 다섯 개와 물고기 [A] 마리</p>
-            <strong>?</strong>
-            <span>B</span>
-            <p>창세기 7장 12절: [B] 주야를 비가 땅에 쏟아졌더라</p>
-            <strong>?</strong>
-            <span>C</span>
-            <p>여호수아 6장 4절: 제사장 [C] 명은 [C] 양각 나팔을 잡고</p>
-            <strong>?</strong>
-            <span>D</span>
-            <p>요한계시록 2장 1절: 오른손에 있는 [D] 별을 붙잡고</p>
-            <strong>?</strong>
-          </div>
-          <div className="bible-formula">(B-A×C)+D+A → 예레미야 [ ]장 19절</div>
+          <p className="bible-verse-line">
+            그러므로 만군의 <strong>[ ? ]</strong>의 하나님께서 이와 같이 말씀하시니라
+          </p>
+          <p className="bible-verse-line">
+            레감의 아들 요나답에게서 내 앞에 설 사람이 영원히 끊어지지 아니하리라 하시니라.
+          </p>
+          <div className="bible-formula">빈칸에 들어갈 말을 띄어쓰기 없이 입력</div>
         </div>
       )
     }
@@ -1144,7 +1151,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'alphabetMix') {
       return (
         <div className="cipher-card alphabet-cipher-card" aria-label="알파벳 조합 문제">
-          {['O', 'N', 'E', 'W', 'O', 'R', 'D'].map((letter, index) => (
+          {['N', 'E', 'W', 'D', 'O', 'O', 'R'].map((letter, index) => (
             <span key={`letter-${letter}-${index + 1}`}>{letter}</span>
           ))}
         </div>
@@ -1360,11 +1367,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <section className="home-card home-card-progress reveal-soft">
                 <p className="home-card-label">RESTORED RECORDS</p>
                 <p className="home-progress-value">
-                  {Math.max(0, challengeIndex - 1)} <span>/ 7</span>
+                  {restoredRecordCount} <span>/ 7</span>
                 </p>
                 <p className="home-card-title">복구된 기록</p>
                 <div className="home-progress-bar" aria-hidden="true">
-                  <span style={{ width: `${Math.max(12, ((challengeIndex - 1) / problemStages.length) * 100)}%` }} />
+                  <span style={{ width: `${Math.max(12, (restoredRecordCount / problemStages.length) * 100)}%` }} />
                 </div>
               </section>
 
@@ -1618,9 +1625,14 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                     {revealedHints[currentProblem.archiveId] ? (
                       <p className="problem-tip">{currentProblem.hint}</p>
                     ) : (
-                      <button type="button" className="problem-hint-button" onClick={handleRevealHint}>
+                      <button
+                        type="button"
+                        className="problem-hint-button"
+                        onClick={handleRevealHint}
+                        disabled={hasReachedHintLimit}
+                      >
                         <span aria-hidden="true">💡</span>
-                        힌트 보기
+                        {hasReachedHintLimit ? '힌트 소진' : '힌트 보기'}
                       </button>
                     )}
                   </div>
