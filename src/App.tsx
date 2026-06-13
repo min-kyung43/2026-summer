@@ -31,89 +31,95 @@ const bootLines = [
 ] as const
 
 const archives = [
-  { id: '01', name: '본당', status: '복구 가능', locked: false },
-  { id: '02', name: '교육관', status: '잠금', locked: true },
+  { id: '01', name: '소예배실', status: '복구 가능', locked: false },
+  { id: '02', name: '본당', status: '잠금', locked: true },
   { id: '03', name: '식당', status: '잠금', locked: true },
-  { id: '04', name: '소예배실', status: '잠금', locked: true },
-  { id: '05', name: '체육관', status: '잠금', locked: true },
-  { id: '06', name: '옥상', status: '잠금', locked: true },
-  { id: '07', name: '마지막 기록', status: '잠금', locked: true },
+  { id: '04', name: '2층 복도', status: '잠금', locked: true },
+  { id: '05', name: '야외 캠핑장', status: '잠금', locked: true },
+  { id: '06', name: '3층', status: '잠금', locked: true },
+  { id: '07', name: '수영장', status: '잠금', locked: true },
 ] as const
 
 const teamOptions = ['1조', '2조', '3조', '4조', '5조', '6조', '7조'] as const
 const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
 const firstArchiveQrValue = 'ARCHIVE-01-NEXT'
+const handSignalAnswer = '3'
+const circleCoordinateAnswer = '19767'
 
 const problemStages = [
   {
     archiveId: '01',
-    title: '봉인된 예배당',
+    title: '매직 다이어리',
     intro: [
-      '탐색팀은 오래전에 닫힌 본당의 문 앞에 도착한다.',
-      '문틈 사이로 아주 약한 빛이 새어 나오지만, 안쪽은 여전히 침묵에 잠겨 있다.',
+      '탐색팀은 오래전에 닫힌 소예배실의 문 앞에 도착한다.',
       '입구의 기록 장치는 첫 기록이 기억의 순서로만 열린다고 말한다.',
+      '오래된 다이어리의 숫자를 해독해야 봉인된 장치가 열린다.',
     ],
     story: [
-      '본당의 문은 열렸지만, 그 안은 여전히 오래된 침묵으로 가득하다.',
-      '바닥에 남은 작은 신호가 첫 번째 단서를 가리키고 있다.',
-      '이 문을 넘어야만 빛의 흔적이 다음 기록으로 이어진다.',
+      '오래된 다이어리에서 이상한 숫자들이 발견되었습니다.',
+      '각 요일 옆에는 알 수 없는 규칙의 숫자가 적혀 있습니다.',
+      '규칙을 해독하면 다음 기록으로 향하는 암호가 나타납니다.',
     ],
     questionLabel: '문제',
-    question: '다음 숫자 중 가장 작은 수를 고르시오.',
-    answer: '1',
+    question: '요일 옆 숫자의 규칙을 해독하고 THU의 값을 입력하십시오.',
+    // 규칙: 요일 영문 안에 포함된 직선 개수 기준. MON=3, TUE=5, WED=4, THU=3.
+    answer: '3',
     clueTitle: '문제를 풀었을 때 얻는 단서',
-    clue: '첫 번째 기록은 본당 아래, 기억이 보관된 곳에 남아 있다.',
+    clue: '다이어리의 마지막 장에는 다음 장소를 향한 희미한 좌표가 남아 있다.',
     actionText: 'QR 스캔 시작',
-    tip: '본당 입구에 남은 신호를 스캔하십시오.',
+    tip: '소예배실 입구에 남은 신호를 스캔하십시오.',
     state: 'QR 신호 대기',
     resultLabel: '첫 번째 기록',
+    puzzleType: 'weekday',
   },
   {
     archiveId: '02',
-    title: '잔향의 복도',
+    title: '침묵의 수신호',
     intro: [
-      '복도 벽면에는 끊어지고 이어지는 음성 기록이 남아 있다.',
-      '사라진 이름들이 낮은 떨림처럼 벽을 따라 흐르고 있다.',
-      '소리는 지워지지 않았다. 다만 순서를 잃었을 뿐이다.',
+      '복도 벽면에는 말 대신 손짓으로 남겨진 기록이 흐르고 있다.',
+      '같은 손짓처럼 보이지만 각각의 의미는 조금씩 다르다.',
+      '수신호의 관계를 해독해야 다음 기록이 열린다.',
     ],
     story: [
-      '복도 끝에 놓인 장치는 마지막 문장을 기다리고 있다.',
-      '흐트러진 기록을 다시 이어 붙여야 다음 장소의 문이 열린다.',
-      '신호는 희미하지만, 방향은 분명하게 남아 있다.',
+      '어둠 속 기록에는 말 대신 손가락으로 남겨진 수신호가 새겨져 있습니다.',
+      '같은 손짓처럼 보이지만, 각각의 의미는 조금씩 다릅니다.',
+      '수신호의 관계를 해독하면 다음 암호를 얻을 수 있습니다.',
     ],
     questionLabel: '문제',
-    question: '다음 글자들을 올바른 순서로 읽으면 무엇이 되는가? `빛 / 을 / 찾 / 아 / 서`',
-    answer: '빛을 찾아서',
+    question: '기록에 남은 수신호 관계를 보고 마지막 물음표의 값을 입력하십시오.',
+    answer: handSignalAnswer,
     clueTitle: '문제를 풀었을 때 얻는 단서',
-    clue: '다음 기록은 소리가 끝나는 곳, 지하의 작은 방에 있다.',
+    clue: '침묵 속 손짓은 다음 기록이 더 아래층으로 이어진다고 가리킨다.',
     actionText: '기록 열기',
-    tip: '끊어진 음성을 하나의 문장으로 이어 보십시오.',
+    tip: '같은 손짓이 반복될 때 관계가 어떻게 바뀌는지 살펴보십시오.',
     state: '기록 복구 중',
     resultLabel: '둘째 기록',
+    puzzleType: 'handSignals',
   },
   {
     archiveId: '03',
-    title: '침묵의 방',
+    title: '검은 원의 좌표',
     intro: [
       '지하의 작은 방은 소리를 삼켜버릴 만큼 조용하다.',
-      '벽에는 지워진 이름들이 남아 있고, 중앙에는 오래된 기록책이 놓여 있다.',
-      '누군가가 숨긴 흔적을 다시 읽어야만 빛의 방향이 드러난다.',
+      '벽에는 숫자 배열과 검은 원, 흰 원으로 된 암호가 남아 있다.',
+      '모든 단서를 조합해야 숨겨진 5자리 좌표가 드러난다.',
     ],
     story: [
-      '이 방은 기록을 숨기기 위해 만들어졌지만, 동시에 기억을 지키는 공간이기도 하다.',
-      '지워진 이름들 사이에 아직 남아 있는 단어가 있다.',
-      '그 단어가 다음 기록을 향한 통로를 열어 준다.',
+      '암호화된 기록에는 숫자 배열과 검은 원이 함께 남겨져 있습니다.',
+      '흰 원은 숫자만 맞는 흔적이고, 검은 원은 숫자와 위치가 모두 맞는 흔적입니다.',
+      '모든 단서를 조합하면 숨겨진 5자리 암호가 드러납니다.',
     ],
     questionLabel: '문제',
-    question: '빛을 잃은 세상에서 다시 일어서는 마음을 뜻하는 단어는?',
-    answer: '소망',
+    question: '검은 원 5개가 완성되는 5자리 암호를 입력하십시오.',
+    answer: circleCoordinateAnswer,
     clueTitle: '문제를 풀었을 때 얻는 단서',
-    clue: '소망은 위로 올라간다. 다음 기록은 창이 많은 층에 있다.',
+    clue: '검은 원의 좌표는 다음 기록이 창이 많은 층에 있음을 가리킨다.',
     actionText: '기록 열기',
-    tip: '지워진 기록 속에서 살아남은 단어를 찾으십시오.',
+    tip: '검은 원은 숫자와 위치가 모두 맞는 단서입니다.',
     state: '기록 복구 중',
     resultLabel: '셋째 기록',
+    puzzleType: 'circleCoordinate',
   },
   {
     archiveId: '04',
@@ -223,6 +229,7 @@ type Phase =
   | 'step-puzzle'
   | 'step-restored'
 type TeamOption = (typeof teamOptions)[number]
+type ArchiveId = (typeof archives)[number]['id']
 type AppSession = {
   phase: Phase
   storyIndex: number
@@ -231,6 +238,16 @@ type AppSession = {
   activeTeam: TeamRecord | null
   recoveryCode: string
 }
+
+const teamArchiveOrders = {
+  '1조': ['01', '02', '03', '04', '05', '06', '07'],
+  '2조': ['01', '03', '04', '05', '06', '02', '07'],
+  '3조': ['01', '04', '05', '06', '02', '03', '07'],
+  '4조': ['01', '05', '06', '02', '03', '04', '07'],
+  '5조': ['01', '06', '02', '03', '04', '05', '07'],
+  '6조': ['01', '02', '04', '06', '03', '05', '07'],
+  '7조': ['01', '03', '05', '02', '06', '04', '07'],
+} satisfies Record<TeamOption, readonly ArchiveId[]>
 
 const validPhases = new Set<Phase>([
   'story',
@@ -310,16 +327,52 @@ function createFallbackAdminTeams() {
   return teamOptions.map((teamName) => createFallbackTeamRecord(teamName))
 }
 
+function getTeamOptionFromRecord(team: Pick<TeamRecord, 'team_name' | 'team_code'>): TeamOption {
+  if (isTeamOption(team.team_name)) {
+    return team.team_name
+  }
+
+  return teamOptions.find((teamName) => getTeamCodeForOption(teamName) === team.team_code) ?? '1조'
+}
+
+function getTeamArchiveOrder(teamName: TeamOption | null | undefined) {
+  return teamArchiveOrders[teamName ?? '1조']
+}
+
+function getArchiveById(archiveId: string) {
+  return archives.find((archive) => archive.id === archiveId) ?? archives[0]
+}
+
+function getProblemByArchiveId(archiveId: string) {
+  return problemStages.find((stage) => stage.archiveId === archiveId) ?? problemStages[0]
+}
+
 function getStageId(stage: number) {
   return String(Math.max(1, Math.min(stage, archives.length))).padStart(2, '0')
 }
 
-function getArchiveByStage(stage: number) {
-  return archives[Math.max(0, Math.min(stage - 1, archives.length - 1))]
+function getTeamArchiveByStage(stage: number, teamName: TeamOption | null | undefined) {
+  const order = getTeamArchiveOrder(teamName)
+  const archiveId = order[Math.max(0, Math.min(stage - 1, order.length - 1))]
+
+  return getArchiveById(archiveId)
 }
 
-function getNextArchiveByStage(stage: number) {
-  return archives[Math.max(0, Math.min(stage, archives.length - 1))]
+function getTeamProblemByStage(stage: number, teamName: TeamOption | null | undefined) {
+  return getProblemByArchiveId(getTeamArchiveByStage(stage, teamName).id)
+}
+
+function getNextTeamArchiveByStage(stage: number, teamName: TeamOption | null | undefined) {
+  const order = getTeamArchiveOrder(teamName)
+  const archiveId = order[Math.max(0, Math.min(stage, order.length - 1))]
+
+  return getArchiveById(archiveId)
+}
+
+function getTeamStageByArchiveId(archiveId: string, teamName: TeamOption | null | undefined) {
+  const stageIndex = getTeamArchiveOrder(teamName).indexOf(archiveId as ArchiveId)
+
+  return stageIndex >= 0 ? stageIndex + 1 : null
 }
 
 function normalizeAnswer(text: string) {
@@ -449,9 +502,9 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                 <div className="admin-team-body">
                   <div className="admin-team-location">
                     <span>현재 위치</span>
-                    <strong>{getArchiveByStage(row.current_stage).name}</strong>
+                    <strong>{getTeamArchiveByStage(row.current_stage, getTeamOptionFromRecord(row)).name}</strong>
                     <p className="admin-team-note">
-                      다음 기록 · {row.is_finished ? '모든 기록 복구 완료' : getNextArchiveByStage(row.current_stage).name}
+                      다음 기록 · {row.is_finished ? '모든 기록 복구 완료' : getNextTeamArchiveByStage(row.current_stage, getTeamOptionFromRecord(row)).name}
                     </p>
                   </div>
                   <div className="admin-team-progress">
@@ -612,6 +665,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     }
   }, [])
 
+  const teamForOrder = selectedTeam ?? (activeTeam ? getTeamOptionFromRecord(activeTeam) : null)
+  const orderedArchives = getTeamArchiveOrder(teamForOrder).map((archiveId) => getArchiveById(archiveId))
+  const currentProblem = getTeamProblemByStage(challengeIndex, teamForOrder)
+  const currentArchive = getTeamArchiveByStage(challengeIndex, teamForOrder)
+
   const handleAdvanceStory = () => {
     if (storyIndex === storySlides.length - 1) {
       setVisibleBootLines(0)
@@ -702,9 +760,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const handleArchiveOpen = (archiveId: string) => {
-    const nextChallengeIndex = Number.parseInt(archiveId, 10)
+    const nextChallengeIndex = getTeamStageByArchiveId(archiveId, teamForOrder)
 
-    if (Number.isNaN(nextChallengeIndex)) {
+    if (nextChallengeIndex === null) {
       return
     }
 
@@ -720,15 +778,40 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setPhase('step-story')
   }
 
-  const handlePuzzleSubmit = () => {
-    const currentStage = problemStages[challengeIndex - 1]
-
-    if (normalizeAnswer(recoveryCode) !== normalizeAnswer(currentStage.answer)) {
-      setPuzzleFeedback('정답이 아닙니다. 신호를 다시 해독해 보세요.')
+  const handlePuzzleSubmit = async () => {
+    if (normalizeAnswer(recoveryCode) !== normalizeAnswer(currentProblem.answer)) {
+      setPuzzleFeedback('기록 복구 실패. 다시 해독해보세요.')
       return
     }
 
     setPuzzleFeedback('')
+
+    const nextStage = Math.min(problemStages.length, challengeIndex + 1)
+    const nextCompletedCount = Math.min(problemStages.length, Math.max(activeTeam?.completed_count ?? 0, challengeIndex))
+    const nextIsFinished = challengeIndex >= problemStages.length
+
+    if (activeTeam?.team_code) {
+      const nextTeam = {
+        ...activeTeam,
+        current_stage: nextStage,
+        completed_count: nextCompletedCount,
+        is_finished: nextIsFinished,
+        finished_at: nextIsFinished ? new Date().toISOString() : activeTeam.finished_at,
+      }
+
+      setActiveTeam(nextTeam)
+
+      await supabase
+        .from('teams')
+        .update({
+          current_stage: nextStage,
+          completed_count: nextCompletedCount,
+          is_finished: nextIsFinished,
+          finished_at: nextTeam.finished_at,
+        })
+        .eq('team_code', activeTeam.team_code)
+    }
+
     setPhase('step-restored')
   }
 
@@ -787,7 +870,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
           if (result.getText() !== firstArchiveQrValue) {
             setQrScannerStatus('error')
-            setQrScannerMessage('본당 QR만 인식할 수 있습니다.')
+            setQrScannerMessage('소예배실 QR만 인식할 수 있습니다.')
             return
           }
 
@@ -837,7 +920,84 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const currentSlide = storySlides[storyIndex]
-  const currentProblem = problemStages[challengeIndex - 1]
+
+  const renderPuzzleCard = () => {
+    if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'weekday') {
+      return (
+        <div className="cipher-card weekday-cipher-card" aria-label="요일 숫자 문제">
+          {[
+            ['MON', '3'],
+            ['TUE', '5'],
+            ['WED', '4'],
+            ['THU', '?'],
+          ].map(([day, value]) => (
+            <div className="weekday-cipher-row" key={day}>
+              <span>{day}</span>
+              <span aria-hidden="true">=</span>
+              <strong className={value === '?' ? 'is-question' : ''}>{value}</strong>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'handSignals') {
+      const handRows = [
+        ['☝', '=', '🖐'],
+        ['✌', '=', '✌'],
+        ['🖖', '+', '☝', '=', '☝'],
+        ['🖐', '+', '✌', '=', '🖐'],
+        ['🖐', '+', '🖖', '=', '?'],
+      ]
+
+      return (
+        <div className="cipher-card hand-cipher-card" aria-label="손가락 도형 문제">
+          {handRows.map((row, rowIndex) => (
+            <div className="hand-cipher-row" key={`hand-row-${rowIndex + 1}`}>
+              {row.map((item, itemIndex) => (
+                <span
+                  key={`${item}-${itemIndex}`}
+                  className={item === '?' ? 'is-question' : item === '=' || item === '+' ? 'is-symbol' : 'is-hand'}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'circleCoordinate') {
+      const coordinateRows = [
+        { code: '39224', black: 1, white: 0 },
+        { code: '77463', black: 1, white: 2 },
+        { code: '77124', black: 0, white: 3 },
+        { code: '29181', black: 1, white: 1 },
+        { code: '?????', black: 5, white: 0, pending: true },
+      ]
+
+      return (
+        <div className="cipher-card coordinate-cipher-card" aria-label="숫자와 원 위치 문제">
+          {coordinateRows.map((row) => (
+            <div className={`coordinate-cipher-row ${row.pending ? 'is-pending' : ''}`} key={row.code}>
+              <span className="coordinate-code">{row.code}</span>
+              <span className="coordinate-dots" aria-label={`검은 원 ${row.black}개, 흰 원 ${row.white}개`}>
+                {Array.from({ length: row.black }).map((_, index) => (
+                  <span className="dot is-black" key={`black-${row.code}-${index + 1}`} />
+                ))}
+                {Array.from({ length: row.white }).map((_, index) => (
+                  <span className="dot is-white" key={`white-${row.code}-${index + 1}`} />
+                ))}
+              </span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    return <p className="problem-question-copy">{currentProblem.question}</p>
+  }
 
   return (
     <main className="app-shell">
@@ -1012,7 +1172,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 <div className="home-now-body">
                   <div>
                     <p className="home-now-location">현재 위치</p>
-                    <h2 className="home-now-title">{getArchiveByStage(challengeIndex).name}</h2>
+                    <h2 className="home-now-title">{currentArchive.name}</h2>
                     <p className="home-now-description">
                       {currentProblem.title}의 기록이 발견되었습니다.
                     </p>
@@ -1053,7 +1213,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             </header>
 
             <div className="archive-list">
-              {archives.map((archive, index) => {
+              {orderedArchives.map((archive, index) => {
                 const archiveStage = index + 1
                 const isRestored = archiveStage < challengeIndex
                 const isCurrent = archiveStage === challengeIndex
@@ -1071,7 +1231,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    disabled={isLocked}
+                    disabled={isLocked || isRestored}
                     onClick={() => handleArchiveOpen(archive.id)}
                   >
                     <div className="archive-card-header">
@@ -1196,7 +1356,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                     ? '스캔 중'
                     : qrScannerStatus === 'found'
                       ? '신호 확인'
-                      : currentProblem.actionText}
+                      : 'QR 스캔 시작'}
                 </button>
               </div>
             ) : (
@@ -1240,7 +1400,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <div>
                 <p className="problem-tip">{currentProblem.questionLabel}</p>
                 <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
-                  {archives.map((archive) => (
+                  {orderedArchives.map((archive) => (
                     <span
                       key={`story-progress-${archive.id}`}
                       className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
@@ -1280,6 +1440,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 정답을 입력해주세요.
               </h1>
               <p className="problem-question-copy">{currentProblem.question}</p>
+              {renderPuzzleCard()}
               <label className="problem-code-field">
                 <span>ANSWER</span>
                 <input
@@ -1301,7 +1462,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <div>
                 {challengeIndex > 1 ? <p className="problem-tip">{currentProblem.tip}</p> : null}
                 <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
-                  {archives.map((archive) => (
+                  {orderedArchives.map((archive) => (
                     <span
                       key={`puzzle-progress-${archive.id}`}
                       className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
@@ -1347,7 +1508,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="problem-bottom-row">
               <div className="problem-progress" aria-label={`진행 ${challengeIndex}/${problemStages.length}`}>
-                {archives.map((archive) => (
+                {orderedArchives.map((archive) => (
                   <span
                     key={`restored-progress-${archive.id}`}
                     className={archive.id === currentProblem.archiveId ? 'is-active' : ''}
@@ -1378,13 +1539,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <div className="archive-detail-panel reveal-soft">
               <p className="archive-system-label">ARCHIVE #01</p>
               <h1 className="archive-detail-title" lang="ko">
-                본당
+                소예배실
               </h1>
               <div className="archive-rule" aria-hidden="true" />
               <div className="archive-detail-copy" lang="ko">
                 <p>복구 가능한 기록이 감지되었습니다.</p>
                 <p>
-                  오래전 본당에 남겨진 흔적이
+                  오래전 소예배실에 남겨진 흔적이
                   <br />
                   아직 완전히 지워지지 않았습니다.
                 </p>
