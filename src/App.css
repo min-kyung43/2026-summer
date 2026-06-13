@@ -1403,26 +1403,49 @@
 
 .hand-cipher-card {
   display: grid;
-  gap: 8px;
+  gap: 10px;
+}
+
+.hand-cipher-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
 }
 
 .hand-cipher-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
-.hand-cipher-row .is-hand,
+.hand-cipher-row .is-hand-group,
 .hand-cipher-row .is-question {
-  min-width: 34px;
+  min-width: 0;
   min-height: 34px;
   display: inline-grid;
+  grid-auto-flow: column;
   place-items: center;
+  justify-content: center;
+  gap: 2px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.055);
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
+}
+
+.hand-cipher-row .is-hand {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 28px;
+}
+
+.hand-cipher-row .is-question-mark {
+  color: #f0c5c5;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .hand-cipher-row .is-symbol {
@@ -1559,7 +1582,8 @@
   right: 6px;
   bottom: 34px;
   left: 6px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
@@ -1570,7 +1594,7 @@
 }
 
 .problem-tip {
-  margin-bottom: 54px;
+  margin-bottom: 12px;
   font-family: var(--font-story);
   color: rgba(255, 255, 255, 0.56);
   font-size: 13px;
@@ -1774,21 +1798,31 @@
 }
 
 .problem-hint-action {
-  min-height: 42px;
+  min-height: 38px;
+  margin-bottom: 12px;
   display: flex;
   align-items: flex-end;
 }
 
 .problem-hint-button {
-  min-height: 38px;
-  padding: 0 16px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
   border: 1px solid rgba(154, 240, 195, 0.24);
   border-radius: 999px;
   background: rgba(154, 240, 195, 0.08);
   color: rgba(247, 251, 255, 0.88);
   font-family: var(--font-story);
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.problem-hint-button span {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .problem-pill-button:disabled,
@@ -2596,6 +2630,30 @@
     font-size: 20px;
   }
 
+  .hand-cipher-grid {
+    gap: 6px;
+  }
+
+  .hand-cipher-row {
+    gap: 4px;
+  }
+
+  .hand-cipher-row .is-hand-group,
+  .hand-cipher-row .is-question {
+    min-height: 28px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+
+  .hand-cipher-row .is-hand {
+    width: 17px;
+    height: 22px;
+  }
+
+  .hand-cipher-row .is-question-mark {
+    font-size: 20px;
+  }
+
   .coordinate-code {
     font-size: 18px;
   }
@@ -2607,6 +2665,7 @@
 
   .problem-bottom-row {
     bottom: 18px;
+    gap: 12px;
   }
 
   .problem-pill-button {

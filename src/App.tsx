@@ -144,7 +144,7 @@ const problemStages = [
       '마지막 구절에 도달할 수 있다.',
     ],
     questionLabel: '문제',
-    question: 'A, B, C, D를 찾고 (B-A×C)+D+A의 값을 구한 뒤 예레미야 [결과값]장 19절의 빈칸에 들어갈 말을 입력하시오.',
+    question: '마태복음 14장 17절, 창세기 7장 12절, 여호수아 6장 4절, 요한계시록 2장 1절에서 A, B, C, D를 찾고 (B-A×C)+D+A의 값을 구한 뒤 예레미야 [결과값]장 19절의 빈칸에 들어갈 말을 입력하시오.',
     answer: '여호와이스라엘',
     answers: ['여호와이스라엘', '여호와 이스라엘'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
@@ -1053,26 +1053,40 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'handSignals') {
       const handRows = [
-        ['☝', '+', '✌', '=', '3'],
-        ['✌', '+', '🖐', '=', '7'],
-        ['🖖', '+', '🖐', '=', '?'],
+        [['☝'], ['='], ['🖐']],
+        [['✌'], ['='], ['✌']],
+        [['🖖'], ['='], ['✌']],
+        [['🖐'], ['='], ['🖖']],
+        [['🖐'], ['='], ['✌']],
+        [['🖐', '☝'], ['='], ['☝']],
+        [['🖐', '✌'], ['='], ['🖖']],
+        [['🖐', '🖖'], ['='], ['?']],
       ]
 
       return (
         <div className="cipher-card hand-cipher-card" aria-label="손가락 도형 문제">
           <p className="cipher-card-caption">SILENT SIGNAL</p>
-          {handRows.map((row, rowIndex) => (
-            <div className="hand-cipher-row" key={`hand-row-${rowIndex + 1}`}>
-              {row.map((item, itemIndex) => (
-                <span
-                  key={`${item}-${itemIndex}`}
-                  className={item === '?' ? 'is-question' : item === '=' || item === '+' ? 'is-symbol' : 'is-hand'}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          ))}
+          <div className="hand-cipher-grid">
+            {handRows.map((row, rowIndex) => (
+              <div className="hand-cipher-row" key={`hand-row-${rowIndex + 1}`}>
+                {row.map((group, groupIndex) => (
+                  <span
+                    key={`${rowIndex + 1}-${groupIndex + 1}`}
+                    className={group[0] === '=' ? 'is-symbol' : group[0] === '?' ? 'is-question' : 'is-hand-group'}
+                  >
+                    {group.map((item, itemIndex) => (
+                      <span
+                        key={`${item}-${itemIndex}`}
+                        className={item === '?' ? 'is-question-mark' : 'is-hand'}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )
     }
@@ -1110,16 +1124,16 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         <div className="cipher-card bible-cipher-card" aria-label="성경 암호 문제">
           <div className="bible-cipher-grid">
             <span>A</span>
-            <p>창세기 1장 3절의 절 번호</p>
+            <p>마태복음 14장 17절: 떡 다섯 개와 물고기 [A] 마리</p>
             <strong>?</strong>
             <span>B</span>
-            <p>출애굽기 십계명이 기록된 장</p>
+            <p>창세기 7장 12절: [B] 주야를 비가 땅에 쏟아졌더라</p>
             <strong>?</strong>
             <span>C</span>
-            <p>창조의 둘째 날</p>
+            <p>여호수아 6장 4절: 제사장 [C] 명은 [C] 양각 나팔을 잡고</p>
             <strong>?</strong>
             <span>D</span>
-            <p>마태복음 5장 14절의 절 번호</p>
+            <p>요한계시록 2장 1절: 오른손에 있는 [D] 별을 붙잡고</p>
             <strong>?</strong>
           </div>
           <div className="bible-formula">(B-A×C)+D+A → 예레미야 [ ]장 19절</div>
@@ -1605,6 +1619,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                       <p className="problem-tip">{currentProblem.hint}</p>
                     ) : (
                       <button type="button" className="problem-hint-button" onClick={handleRevealHint}>
+                        <span aria-hidden="true">💡</span>
                         힌트 보기
                       </button>
                     )}
