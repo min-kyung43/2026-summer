@@ -406,9 +406,12 @@
 }
 
 .boot-screen {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
   display: flex;
   align-items: flex-end;
-  padding-bottom: 78px;
+  padding-bottom: 168px;
   overflow: hidden;
 }
 
@@ -557,10 +560,14 @@
 }
 
 .boot-panel {
+  position: relative;
+  z-index: 2;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 144px;
+  justify-content: flex-end;
+  gap: 0;
+  min-height: 100%;
 }
 
 .boot-lines {
@@ -622,19 +629,29 @@
 }
 
 .final-panel {
+  position: fixed;
+  z-index: 6;
+  right: max(24px, calc((100vw - 390px) / 2 + 24px));
+  bottom: 0;
+  left: max(24px, calc((100vw - 390px) / 2 + 24px));
   opacity: 0;
   transform: translateY(4px);
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: 22px;
+  padding: 18px 0 calc(24px + env(safe-area-inset-bottom));
+  background:
+    linear-gradient(180deg, rgba(5, 7, 9, 0), rgba(5, 7, 9, 0.94) 24%, rgba(5, 7, 9, 0.98));
   transition:
     opacity 600ms ease,
     transform 600ms ease;
+  pointer-events: none;
 }
 
 .final-panel.is-visible {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 
 .final-panel.is-visible .divider {
@@ -654,7 +671,7 @@
   line-height: 1.8;
   text-align: center;
   color: var(--text-muted);
-  margin-top: -10px;
+  margin-top: 0;
 }
 
 .start-button {
@@ -2587,6 +2604,29 @@
   white-space: nowrap;
 }
 
+.admin-reset-all-button {
+  width: 100%;
+  min-height: 46px;
+  margin: 18px 0 0;
+  border: 1px solid rgba(240, 197, 197, 0.24);
+  border-radius: 999px;
+  color: rgba(247, 251, 255, 0.9);
+  font-family: var(--font-story);
+  font-size: 14px;
+  font-weight: 500;
+  background:
+    radial-gradient(circle at 86% 12%, rgba(240, 197, 197, 0.12), transparent 34%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.admin-reset-all-button:disabled {
+  color: var(--text-muted);
+  opacity: 0.58;
+}
+
 .admin-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3003,10 +3043,13 @@
     align-items: flex-start;
   }
 
-  .boot-screen,
   .team-select-screen,
   .archive-screen {
     min-height: 844px;
+  }
+
+  .boot-screen {
+    min-height: 100svh;
   }
 
   .story-screen {

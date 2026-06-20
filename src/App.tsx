@@ -33,10 +33,10 @@ const bootLines = [
 const fakeQrMessages = [
   ['힝 속았지?', '다른 QR 찾아봥 ~ ><'],
   ['힝 속았지?', '이것도 아니지롱 ~'],
-  ['힝 속았지?', '너 일부러 이런 것만 찾는거야?^^'],
+  ['힝 속았지?', '일부러 이런 것만 찾는거야?^^'],
   ['힝 속았지?', '머리를 좀 더 맞대봐 !!'],
   ['힝 속았지?', '기도 메타 ㄱㄱ'],
-  ['힝 속았지?', '이제는 제대로 찾아보세여 ..'],
+  ['힝 속았지?', '이제는 진짜 제대로 찾아볼까?'],
   ['힝 속았지?', '에이~ 설마 이걸 믿은 거야? 😏'],
   ['힝 속았지?', '진짜 단서는 다른 곳에 있다구 ~ 👀'],
   ['힝 속았지?', '조금만 더 찾아봐 ><'],
@@ -47,6 +47,12 @@ const fakeQrImages = [
   '/fake-image/fake-01.jpeg',
   '/fake-image/fake-02.jpeg',
   '/fake-image/fake-03.jpeg',
+  '/fake-image/fake-04.jpg',
+  '/fake-image/fake-05.jpg',
+  '/fake-image/fake-06.jpg',
+  '/fake-image/fake-07.png',
+  '/fake-image/fake-08.gif',
+  '/fake-image/fake-09.png',
 ] as const
 
 const archives = [
@@ -420,7 +426,23 @@ function createFallbackTeamRecord(teamName: TeamOption): TeamRecord {
 }
 
 function createFallbackAdminTeams() {
-  return teamOptions.map((teamName) => createFallbackTeamRecord(teamName))
+  return teamOptions.map((teamName) => ({
+    ...createFallbackTeamRecord(teamName),
+    started_at: null,
+  }))
+}
+
+function createResetTeamPayload(teamName: TeamOption) {
+  return {
+    team_name: teamName,
+    team_code: getTeamCodeForOption(teamName),
+    current_stage: 1,
+    completed_count: 0,
+    hint_count: 0,
+    is_finished: false,
+    started_at: null,
+    finished_at: null,
+  }
 }
 
 function getTeamOptionFromRecord(team: Pick<TeamRecord, 'team_name' | 'team_code'>): TeamOption {
@@ -615,6 +637,41 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [teams, setTeams] = useState<TeamRecord[]>([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(true)
   const [adminError, setAdminError] = useState('')
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
+  const [isResettingTeams, setIsResettingTeams] = useState(false)
+
+  const loadTeams = async (showLoading = false) => {
+    if (showLoading) {
+      setIsLoadingTeams(true)
+    }
+
+    const { data, error } = await supabase
+      .from('teams')
+      .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
+      .in('team_code', teamCodes)
+      .order('team_code', { ascending: true })
+
+    if (error || !data || data.length === 0) {
+      setAdminError('연결된 팀 데이터가 없어 기본 조별 보드를 표시합니다.')
+      setTeams(createFallbackAdminTeams())
+    } else {
+      const dataByCode = new Map(data.map((row) => [row.team_code, row]))
+      setAdminError('')
+      setTeams(
+        teamOptions.map((teamName) => {
+          const teamCode = getTeamCodeForOption(teamName)
+
+          return dataByCode.get(teamCode) ?? {
+            id: teamCode,
+            ...createResetTeamPayload(teamName),
+          }
+        }),
+      )
+    }
+
+    setLastSyncedAt(new Date())
+    setIsLoadingTeams(false)
+  }
 
   useEffect(() => {
     if (!adminUnlocked) {
@@ -624,36 +681,40 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
 
     let isMounted = true
 
-    async function loadTeams() {
-      setIsLoadingTeams(true)
-      const { data, error } = await supabase
-        .from('teams')
-        .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
-        .order('team_code', { ascending: true })
-
-      if (!isMounted) {
-        return
+    void loadTeams(true)
+    const syncTimer = window.setInterval(() => {
+      if (isMounted) {
+        void loadTeams(false)
       }
-
-      if (error || !data || data.length === 0) {
-        setAdminError('연결된 팀 데이터가 없어 기본 조별 보드를 표시합니다.')
-        setTeams(createFallbackAdminTeams())
-      } else {
-        const visibleTeams = data.filter((row) => teamCodes.includes(row.team_code))
-
-        setAdminError(visibleTeams.length === 0 ? '연결된 팀 데이터가 없어 기본 조별 보드를 표시합니다.' : '')
-        setTeams(visibleTeams.length === 0 ? createFallbackAdminTeams() : visibleTeams)
-      }
-
-      setIsLoadingTeams(false)
-    }
-
-    void loadTeams()
+    }, 5000)
 
     return () => {
       isMounted = false
+      window.clearInterval(syncTimer)
     }
   }, [adminUnlocked])
+
+  const handleResetAllTeams = async () => {
+    if (!window.confirm('모든 조의 진행상황을 초기화합니다. 모든 기기는 조 선택 화면으로 돌아갑니다.')) {
+      return
+    }
+
+    setIsResettingTeams(true)
+    const resetRows = teamOptions.map((teamName) => createResetTeamPayload(teamName))
+    const { error } = await supabase
+      .from('teams')
+      .upsert(resetRows, { onConflict: 'team_code' })
+
+    if (error) {
+      setAdminError('전체 초기화에 실패했습니다. Supabase 권한을 확인해주세요.')
+    } else {
+      setAdminError('')
+      setTeams(createFallbackAdminTeams())
+      setLastSyncedAt(new Date())
+    }
+
+    setIsResettingTeams(false)
+  }
 
   if (!adminUnlocked) {
     return (
@@ -672,9 +733,13 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
     )
   }
 
-  const activeTeams = teams.filter((row) => !row.is_finished).length
+  const enteredTeams = teams.filter((row) => Boolean(row.started_at)).length
+  const activeTeams = teams.filter((row) => Boolean(row.started_at) && !row.is_finished).length
   const hintUsedTeams = teams.reduce((total, row) => total + row.hint_count, 0)
   const completedTeams = teams.filter((row) => row.is_finished).length
+  const syncLabel = lastSyncedAt
+    ? `LAST SYNC ${lastSyncedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`
+    : 'LAST SYNC --:--'
 
   return (
     <main className="admin-shell">
@@ -687,8 +752,16 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
             <p className="admin-kicker">RESTORED ARCHIVE MONITOR</p>
             <h1 className="admin-title">관리자 진행 현황</h1>
           </div>
-          <p className="admin-timestamp">LAST SYNC 13:50</p>
+          <p className="admin-timestamp">{syncLabel}</p>
         </header>
+        <button
+          type="button"
+          className="admin-reset-all-button"
+          onClick={handleResetAllTeams}
+          disabled={isResettingTeams}
+        >
+          {isResettingTeams ? '초기화 중' : '전체 기기 초기화'}
+        </button>
 
         <div className="admin-summary" aria-label="팀 진행 요약">
           <div className="admin-summary-item">
@@ -698,6 +771,10 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
           <div className="admin-summary-item">
             <span>진행 중</span>
             <strong>{activeTeams}</strong>
+          </div>
+          <div className="admin-summary-item">
+            <span>입장 완료</span>
+            <strong>{enteredTeams}</strong>
           </div>
           <div className="admin-summary-item">
             <span>힌트 사용</span>
@@ -715,23 +792,35 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
           <div className="admin-team-list" aria-label="팀별 진행 현황">
             {teams.map((row) => (
               <article className="admin-team-card" key={row.id}>
+                {(() => {
+                  const hasEntered = Boolean(row.started_at)
+                  const teamOption = getTeamOptionFromRecord(row)
+                  const currentTeamArchive = getTeamArchiveByStage(row.current_stage, teamOption)
+                  const nextTeamArchive = getNextTeamArchiveByStage(row.current_stage, teamOption)
+
+                  return (
+                    <>
                 <div className="admin-team-card-header">
                   <div>
                     <p className="admin-team-name">{row.team_name} - 진행 상황</p>
                     <p className="admin-stage">
-                      {row.team_code} · 현재 기록 ARCHIVE #{getTeamArchiveByStage(row.current_stage, getTeamOptionFromRecord(row)).id}
+                      {row.team_code} · {hasEntered ? `현재 기록 ARCHIVE #${currentTeamArchive.id}` : '입장 대기'}
                     </p>
                   </div>
-                  <span className={`admin-status ${row.is_finished ? 'is-complete' : 'is-active'}`}>
-                    {row.is_finished ? '완료' : '진행 중'}
+                  <span className={`admin-status ${row.is_finished ? 'is-complete' : hasEntered ? 'is-active' : 'is-idle'}`}>
+                    {row.is_finished ? '완료' : hasEntered ? '진행 중' : '대기'}
                   </span>
                 </div>
                 <div className="admin-team-body">
                   <div className="admin-team-location">
                     <span>현재 위치</span>
-                    <strong>{row.is_finished ? finalDestination : getTeamArchiveByStage(row.current_stage, getTeamOptionFromRecord(row)).name}</strong>
+                    <strong>{!hasEntered ? '입장 전' : row.is_finished ? finalDestination : currentTeamArchive.name}</strong>
                     <p className="admin-team-note">
-                      다음 기록 · {row.is_finished ? '본당 도착' : getNextTeamArchiveByStage(row.current_stage, getTeamOptionFromRecord(row)).name}
+                      {row.is_finished
+                        ? '본당 도착'
+                        : hasEntered
+                          ? `다음 기록 · ${nextTeamArchive.name}`
+                          : '조 선택 후 진행이 시작됩니다.'}
                     </p>
                   </div>
                   <div className="admin-team-progress">
@@ -758,6 +847,9 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </strong>
                   </div>
                 </div>
+                    </>
+                  )
+                })()}
               </article>
             ))}
           </div>
@@ -839,15 +931,38 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     }
 
     let isMounted = true
+    const activeTeamCode = activeTeam.team_code
 
     async function refreshTeam() {
       const { data, error } = await supabase
         .from('teams')
         .select('id, team_name, team_code, current_stage, completed_count, hint_count, is_finished, started_at, finished_at')
-        .eq('team_code', activeTeam?.team_code)
+        .eq('team_code', activeTeamCode)
         .maybeSingle()
 
       if (!isMounted || error || !data) {
+        return
+      }
+
+      if (data.started_at === null && phase !== 'team-select') {
+        window.localStorage.removeItem(appSessionStorageKey)
+        window.localStorage.removeItem(fakeQrCountStorageKey)
+        setPhase('team-select')
+        setStoryIndex(0)
+        setChallengeIndex(1)
+        setSelectedTeam(null)
+        setActiveTeam(null)
+        setRecoveryCode('')
+        setBibleStep(1)
+        setBibleStepValues(emptyBibleStepValues)
+        setPuzzleFeedback('')
+        setGameStartedAt(null)
+        setWrongAttempts({})
+        setLockedUntil({})
+        setRevealedHints({})
+        setVisibleBootLines(0)
+        setQrScannerStatus('idle')
+        setQrScannerMessage('')
         return
       }
 
@@ -855,11 +970,15 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     }
 
     void refreshTeam()
+    const refreshTimer = window.setInterval(() => {
+      void refreshTeam()
+    }, 5000)
 
     return () => {
       isMounted = false
+      window.clearInterval(refreshTimer)
     }
-  }, [activeTeam?.team_code])
+  }, [activeTeam?.team_code, phase])
 
   useEffect(() => {
     if (phase !== 'boot') {
@@ -999,6 +1118,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
   const handleTeamSelect = async (teamName: TeamOption) => {
     const teamCode = getTeamCodeForOption(teamName)
+    const startedAt = new Date().toISOString()
 
     setIsTeamSelectLoading(true)
     setSelectedTeam(teamName)
@@ -1015,7 +1135,39 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         .maybeSingle()
 
       if (data) {
-        setActiveTeam(data)
+        if (data.started_at === null) {
+          const nextTeam = {
+            ...data,
+            started_at: startedAt,
+          }
+
+          setActiveTeam(nextTeam)
+          await supabase
+            .from('teams')
+            .update({ started_at: startedAt })
+            .eq('team_code', teamCode)
+        } else {
+          setActiveTeam(data)
+        }
+      } else {
+        const fallbackTeam = {
+          ...createFallbackTeamRecord(teamName),
+          started_at: startedAt,
+        }
+
+        setActiveTeam(fallbackTeam)
+        await supabase
+          .from('teams')
+          .insert({
+            team_name: teamName,
+            team_code: teamCode,
+            current_stage: fallbackTeam.current_stage,
+            completed_count: fallbackTeam.completed_count,
+            hint_count: fallbackTeam.hint_count,
+            is_finished: fallbackTeam.is_finished,
+            started_at: fallbackTeam.started_at,
+            finished_at: fallbackTeam.finished_at,
+          })
       }
     } finally {
       setIsTeamSelectLoading(false)
