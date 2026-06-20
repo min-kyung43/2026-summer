@@ -465,6 +465,12 @@ function getArchiveQrValue(archiveId: string) {
   return `ARCHIVE-${archiveId}-NEXT`
 }
 
+function getFakeQrIdFromValue(value: string) {
+  const match = value.trim().match(/^FAKE-QR-(\d{2})$/)
+
+  return match ? match[1] : null
+}
+
 function getProblemAnswers(problem: (typeof problemStages)[number]) {
   return 'answers' in problem ? problem.answers : [problem.answer]
 }
@@ -767,7 +773,7 @@ type OnboardingAppProps = {
 
 function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [storedSession] = useState(() => loadStoredSession())
-  const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'story')
+  const [phase, setPhase] = useState<Phase>(storedSession.phase ?? 'team-select')
   const [storyIndex, setStoryIndex] = useState(storedSession.storyIndex ?? 0)
   const [challengeIndex, setChallengeIndex] = useState(
     Math.max(1, Math.min(storedSession.challengeIndex ?? 1, problemStages.length)),
@@ -971,7 +977,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
   const handleConfirmReset = () => {
     window.localStorage.removeItem(appSessionStorageKey)
-    setPhase('story')
+    setPhase('team-select')
     setStoryIndex(0)
     setChallengeIndex(1)
     setSelectedTeam(null)
@@ -1243,7 +1249,17 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             return
           }
 
-          if (result.getText() !== getArchiveQrValue(currentProblem.archiveId)) {
+          const scannedValue = result.getText()
+          const fakeQrId = getFakeQrIdFromValue(scannedValue)
+
+          if (fakeQrId) {
+            qrScannerControlsRef.current.stop()
+            qrScannerControlsRef.current = null
+            window.location.href = `/?fakeQr=${fakeQrId}`
+            return
+          }
+
+          if (scannedValue !== getArchiveQrValue(currentProblem.archiveId)) {
             setQrScannerStatus('error')
             setQrScannerMessage(`${currentArchive.name} QR만 인식할 수 있습니다.`)
             return

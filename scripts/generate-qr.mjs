@@ -5,7 +5,6 @@ const require = createRequire(import.meta.url)
 const BarcodeFormat = require('@zxing/library/cjs/core/BarcodeFormat.js').default
 const EncodeHintType = require('@zxing/library/cjs/core/EncodeHintType.js').default
 const QRCodeWriter = require('@zxing/library/cjs/core/qrcode/QRCodeWriter.js').default
-const fakeQrBaseUrl = process.env.FAKE_QR_BASE_URL ?? 'https://2026-summer.vercel.app/'
 
 const qrCodes = [
   { id: '01', place: '본당', value: 'ARCHIVE-01-NEXT', filename: 'archive-01-main-hall.svg' },
@@ -63,7 +62,7 @@ for (const qrCode of qrCodes) {
 
 for (let index = 1; index <= 10; index += 1) {
   const id = String(index).padStart(2, '0')
-  const value = new URL(`?fakeQr=${id}`, fakeQrBaseUrl).toString()
+  const value = `FAKE-QR-${id}`
   const filename = `fake-qr-${id}.svg`
   const svg = createQrSvg(value, `FAKE QR #${id}`)
 
