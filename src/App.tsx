@@ -30,6 +30,25 @@ const bootLines = [
   { text: 'AUTHORIZED ACCESS GRANTED', tone: 'green' },
 ] as const
 
+const fakeQrMessages = [
+  ['힝 속았지?', '다른 QR 찾아봥 ~ ><'],
+  ['힝 속았지?', '이것도 아니지롱 ~'],
+  ['힝 속았지?', '너 일부러 이런 것만 찾는거야?^^'],
+  ['힝 속았지?', '머리를 좀 더 맞대봐 !!'],
+  ['힝 속았지?', '기도 메타 ㄱㄱ'],
+  ['힝 속았지?', '이제는 제대로 찾아보세여 ..'],
+  ['힝 속았지?', '에이~ 설마 이걸 믿은 거야? 😏'],
+  ['힝 속았지?', '진짜 단서는 다른 곳에 있다구 ~ 👀'],
+  ['힝 속았지?', '조금만 더 찾아봐 ><'],
+  ['힝 속았지?', '아직도 속으면 어떡해 .. ㅠㅠ'],
+] as const
+
+const fakeQrImages = [
+  '/fake-image/fake-01.jpeg',
+  '/fake-image/fake-02.jpeg',
+  '/fake-image/fake-03.jpeg',
+] as const
+
 const archives = [
   { id: '01', name: '본당', status: '복구 가능', locked: false },
   { id: '02', name: '수영장', status: '잠금', locked: true },
@@ -46,11 +65,12 @@ const emptyBibleStepValues = { A: '', B: '', C: '', D: '' }
 const finalDestination = '본당'
 const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
+const fakeQrCountStorageKey = 'lost-light-fake-qr-counts'
 const gameDurationMs = 60 * 60 * 1000
 const puzzleLockMs = 60 * 1000
 const maxWrongAttempts = 3
 const maxHintCount = 3
-const handSignalAnswer = '8'
+const handSignalAnswer = '0'
 const circleCoordinateAnswer = '19767'
 
 const problemStages = [
@@ -126,7 +146,7 @@ const problemStages = [
     clue: '따뜻한 온기와 사람들의 흔적이 남아 있는 곳. 수많은 만남이 지나간 장소.',
     actionText: 'QR 스캔 시작',
     tip: '현장 QR 신호를 스캔하십시오.',
-    hint: '각 행에서 검은 원과 흰 원의 의미를 분석하시오.',
+    hint: '숫자 야구 게임을 떠올려보세요.',
     state: 'QR 신호 대기',
     resultLabel: '셋째 기록',
     puzzleType: 'circleCoordinate',
@@ -204,7 +224,7 @@ const problemStages = [
     clue: '가장 높은 곳에서 희미한 빛이 감지된다. 아직 완전히 꺼지지 않은 흔적.',
     actionText: 'QR 스캔 시작',
     tip: '현장 QR 신호를 스캔하십시오.',
-    hint: "'새로운 문'",
+    hint: "'한 단어'",
     state: 'QR 신호 대기',
     resultLabel: '여섯째 기록',
     puzzleType: 'alphabetMix',
@@ -473,6 +493,18 @@ function getBibleStepQuestion(step: number) {
   return '예레미야 35장 19절의 빈칸 [ ? ]에 들어갈 말씀을 띄어쓰기 없이 입력하십시오.'
 }
 
+function getBibleStepHint(step: number) {
+  if (step === 1) {
+    return '각 구절의 빈칸에 들어가는 숫자만 A, B, C, D에 넣어보세요.'
+  }
+
+  if (step === 2) {
+    return '곱셈을 먼저 계산한 뒤, 왼쪽부터 차례대로 식을 풀어보세요.'
+  }
+
+  return '주변에 성경책을 찾아보시오.'
+}
+
 function getTeamStageByArchiveId(archiveId: string, teamName: TeamOption | null | undefined) {
   const stageIndex = getTeamArchiveOrder(teamName).indexOf(archiveId as ArchiveId)
 
@@ -485,8 +517,91 @@ function normalizeAnswer(text: string) {
     .replace(/[\s·,./'"“”‘’?!\-]/g, '')
 }
 
+function getStoredFakeQrTeamKey() {
+  try {
+    const storedSession = window.localStorage.getItem(appSessionStorageKey)
+
+    if (!storedSession) {
+      return 'unknown'
+    }
+
+    const parsedSession = JSON.parse(storedSession) as Partial<AppSession>
+    const teamName = isTeamOption(parsedSession.selectedTeam)
+      ? parsedSession.selectedTeam
+      : parsedSession.activeTeam
+        ? getTeamOptionFromRecord(parsedSession.activeTeam)
+        : null
+
+    return teamName ? getTeamCodeForOption(teamName) : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+function getNextFakeQrVisit(teamKey: string) {
+  try {
+    const storedCounts = window.localStorage.getItem(fakeQrCountStorageKey)
+    const counts = storedCounts ? JSON.parse(storedCounts) as Record<string, number> : {}
+    const nextCount = (counts[teamKey] ?? 0) + 1
+
+    window.localStorage.setItem(
+      fakeQrCountStorageKey,
+      JSON.stringify({
+        ...counts,
+        [teamKey]: nextCount,
+      }),
+    )
+
+    return nextCount
+  } catch {
+    return 1
+  }
+}
+
 type AdminDashboardProps = {
   onBack: () => void
+}
+
+function FakeQrPage() {
+  const [fakeVisit] = useState(() => {
+    const teamKey = getStoredFakeQrTeamKey()
+
+    return getNextFakeQrVisit(teamKey)
+  })
+
+  const messageIndex = Math.max(0, Math.min(fakeVisit, fakeQrMessages.length) - 1)
+  const [headline, body] = fakeQrMessages[messageIndex]
+  const imagePath = fakeQrImages[Math.max(0, fakeVisit - 1) % fakeQrImages.length]
+
+  const handleReturn = () => {
+    window.location.href = '/'
+  }
+
+  return (
+    <main className="app-shell">
+      <div className="screen-frame fake-qr-screen">
+        <div className="screen-overlay" aria-hidden="true" />
+        <button type="button" className="fake-qr-home-button" onClick={handleReturn}>
+          HOME
+        </button>
+        <section className="fake-qr-content" aria-label="가짜 QR 안내">
+          <div className="fake-qr-image-frame">
+            <img src={imagePath} alt="" className="fake-qr-image" />
+          </div>
+          <div className="fake-qr-copy" lang="ko">
+            <p>{headline}</p>
+            <p>{body}</p>
+          </div>
+          <div className="fake-qr-divider" aria-hidden="true" />
+          <div className="fake-qr-action-row">
+            <button type="button" className="fake-qr-retry-button" onClick={handleReturn}>
+              QR 다시 찍기
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+  )
 }
 
 function AdminDashboard({ onBack }: AdminDashboardProps) {
@@ -801,6 +916,12 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const isCurrentBibleCipher = 'puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher'
   const isBibleFirstStep = isCurrentBibleCipher && bibleStep === 1
   const currentQuestion = isCurrentBibleCipher ? getBibleStepQuestion(bibleStep) : currentProblem.question
+  const currentHint = isCurrentBibleCipher
+    ? getBibleStepHint(bibleStep)
+    : 'hint' in currentProblem
+      ? currentProblem.hint
+      : ''
+  const currentHintKey = isCurrentBibleCipher ? `${currentProblem.archiveId}-${bibleStep}` : currentProblem.archiveId
   const hasCompletedJourney = Boolean(activeTeam?.is_finished || (activeTeam?.completed_count ?? 0) >= problemStages.length)
   const restoredRecordCount = Math.min(
     problemStages.length,
@@ -1049,11 +1170,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const handleRevealHint = async () => {
-    if (!('hint' in currentProblem) || !currentProblem.hint) {
+    if (!currentHint) {
       return
     }
 
-    if (revealedHints[currentProblem.archiveId]) {
+    if (revealedHints[currentHintKey]) {
       return
     }
 
@@ -1064,7 +1185,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     setRevealedHints((current) => ({
       ...current,
-      [currentProblem.archiveId]: true,
+      [currentHintKey]: true,
     }))
 
     if (!activeTeam?.team_code) {
@@ -1350,7 +1471,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'alphabetMix') {
       return (
         <div className="cipher-card alphabet-cipher-card" aria-label="알파벳 조합 문제">
-          {['O', 'N', 'E', 'W', 'O', 'R', 'D'].map((letter, index) => (
+          {['N', 'E', 'W', 'W', 'O', 'R', 'D'].map((letter, index) => (
             <span key={`letter-${letter}-${index + 1}`}>{letter}</span>
           ))}
         </div>
@@ -1631,9 +1752,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <div className="archive-list">
               {orderedArchives.map((archive, index) => {
                 const archiveStage = index + 1
-                const isRestored = archiveStage < challengeIndex
-                const isCurrent = archiveStage === challengeIndex
-                const isLocked = archiveStage > challengeIndex
+                const isRestored = archiveStage <= restoredRecordCount
+                const isCurrent = !isRestored && archiveStage === challengeIndex
+                const isLocked = !isRestored && archiveStage > challengeIndex
 
                 return (
                   <button
@@ -1881,10 +2002,10 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="problem-bottom-row">
               <div>
-                {'hint' in currentProblem && currentProblem.hint ? (
+                {currentHint ? (
                   <div className="problem-hint-action">
-                    {revealedHints[currentProblem.archiveId] ? (
-                      <p className="problem-tip">{currentProblem.hint}</p>
+                    {revealedHints[currentHintKey] ? (
+                      <p className="problem-tip">{currentHint}</p>
                     ) : (
                       <button
                         type="button"
@@ -2037,11 +2158,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 }
 
 function App() {
-  const [pathname, setPathname] = useState(() => window.location.pathname)
+  const [locationKey, setLocationKey] = useState(() => `${window.location.pathname}${window.location.search}`)
 
   useEffect(() => {
     const handlePopState = () => {
-      setPathname(window.location.pathname)
+      setLocationKey(`${window.location.pathname}${window.location.search}`)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -2056,7 +2177,7 @@ function App() {
       window.history.pushState(null, '', '/admin')
     }
 
-    setPathname('/admin')
+    setLocationKey('/admin')
   }
 
   const handleAdminBack = () => {
@@ -2083,17 +2204,24 @@ function App() {
       window.setTimeout(() => {
         if (window.location.pathname === '/admin') {
           window.history.pushState(null, '', '/')
-          setPathname('/')
+          setLocationKey('/')
         }
       }, 120)
       return
     }
 
     window.history.pushState(null, '', '/')
-    setPathname('/')
+    setLocationKey('/')
   }
 
+  const pathname = locationKey.split('?')[0]
+  const searchParams = new URLSearchParams(window.location.search)
+  const isFakeQrRoute = searchParams.has('fakeQr')
   const isAdminRoute = pathname === '/admin'
+
+  if (isFakeQrRoute) {
+    return <FakeQrPage />
+  }
 
   return isAdminRoute ? (
     <AdminDashboard onBack={handleAdminBack} />

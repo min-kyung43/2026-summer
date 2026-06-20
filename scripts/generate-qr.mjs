@@ -5,6 +5,7 @@ const require = createRequire(import.meta.url)
 const BarcodeFormat = require('@zxing/library/cjs/core/BarcodeFormat.js').default
 const EncodeHintType = require('@zxing/library/cjs/core/EncodeHintType.js').default
 const QRCodeWriter = require('@zxing/library/cjs/core/qrcode/QRCodeWriter.js').default
+const fakeQrBaseUrl = process.env.FAKE_QR_BASE_URL ?? 'https://2026-summer.vercel.app/'
 
 const qrCodes = [
   { id: '01', place: '본당', value: 'ARCHIVE-01-NEXT', filename: 'archive-01-main-hall.svg' },
@@ -17,14 +18,18 @@ const qrCodes = [
 ]
 
 const outputDirectory = new URL('../public/qr/', import.meta.url)
+const fakeOutputDirectory = new URL('../public/fake-qr/', import.meta.url)
+const fakePrintDirectory = new URL('../Fake-QR/', import.meta.url)
 fs.mkdirSync(outputDirectory, { recursive: true })
+fs.mkdirSync(fakeOutputDirectory, { recursive: true })
+fs.mkdirSync(fakePrintDirectory, { recursive: true })
 
 const writer = new QRCodeWriter()
 const hints = new Map()
 hints.set(EncodeHintType.MARGIN, 1)
 
-for (const qrCode of qrCodes) {
-  const matrix = writer.encode(qrCode.value, BarcodeFormat.QR_CODE, 240, 240, hints)
+function createQrSvg(value, label) {
+  const matrix = writer.encode(value, BarcodeFormat.QR_CODE, 240, 240, hints)
   const width = matrix.getWidth()
   const height = matrix.getHeight()
 
@@ -38,16 +43,36 @@ for (const qrCode of qrCodes) {
     }
   }
 
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges" role="img" aria-label="ARCHIVE #${qrCode.id} ${qrCode.place} QR">\n` +
-    `  <title>ARCHIVE #${qrCode.id} ${qrCode.place}</title>\n` +
-    `  <desc>${qrCode.value}</desc>\n` +
+  return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges" role="img" aria-label="${label} QR">\n` +
+    `  <title>${label}</title>\n` +
+    `  <desc>${value}</desc>\n` +
     `  <rect width="100%" height="100%" fill="#eef4ff" />\n` +
     `  ${rects}` +
     `</svg>\n`
+}
+
+for (const qrCode of qrCodes) {
+  const svg = createQrSvg(qrCode.value, `ARCHIVE #${qrCode.id} ${qrCode.place}`)
 
   const outputPath = new URL(qrCode.filename, outputDirectory)
   fs.writeFileSync(outputPath, svg)
 
   console.log(`Wrote ${decodeURIComponent(outputPath.pathname)} (${qrCode.place}: ${qrCode.value})`)
+}
+
+for (let index = 1; index <= 10; index += 1) {
+  const id = String(index).padStart(2, '0')
+  const value = new URL(`?fakeQr=${id}`, fakeQrBaseUrl).toString()
+  const filename = `fake-qr-${id}.svg`
+  const svg = createQrSvg(value, `FAKE QR #${id}`)
+
+  const publicOutputPath = new URL(filename, fakeOutputDirectory)
+  const printOutputPath = new URL(filename, fakePrintDirectory)
+
+  fs.writeFileSync(publicOutputPath, svg)
+  fs.writeFileSync(printOutputPath, svg)
+
+  console.log(`Wrote ${decodeURIComponent(publicOutputPath.pathname)} (${value})`)
+  console.log(`Wrote ${decodeURIComponent(printOutputPath.pathname)} (${value})`)
 }
