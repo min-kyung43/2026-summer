@@ -814,6 +814,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const handleStart = () => {
+    if (selectedTeam) {
+      setPhase('archive-home')
+      return
+    }
+
     setPhase('team-select')
   }
 
@@ -852,7 +857,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setIsTeamSelectLoading(true)
     setSelectedTeam(teamName)
     setActiveTeam(createFallbackTeamRecord(teamName))
-    setPhase('archive-home')
+    setStoryIndex(0)
+    setVisibleBootLines(0)
+    setPhase('story')
 
     try {
       const { data } = await supabase
@@ -1554,7 +1561,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                         <span className="home-stage-dot" aria-label={`ARCHIVE #${archive.id} ${stateLabel}`}>
                           {isRestored ? '✓' : stageNumber}
                         </span>
-                        <span className="home-stage-label">{archive.name}</span>
+                        <span className="home-stage-label">
+                          {isRestored || isCurrent ? archive.name : '기록 복구 필요'}
+                        </span>
                       </div>
                     )
                   })}
