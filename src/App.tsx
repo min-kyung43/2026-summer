@@ -188,7 +188,7 @@ const problemStages = [
     intro: [
       '손상된 기록 속에는 흩어진 문자만 남아 있다.',
       '문자들은 하나의 의미를 가지고 있었지만 시간이 흐르며 순서가 사라졌다.',
-      '흩어진 알파벳을 모두 사용해 하나의 단어를 완성해야 한다.',
+      '흩어진 알파벳을 모두 사용해 한 단어를 완성해야 한다.',
     ],
     story: [
       '손상된 기록 속에는 흩어진 문자만 남아 있다.',
@@ -196,7 +196,7 @@ const problemStages = [
       '시간이 흐르며 순서가 사라졌다.',
     ],
     questionLabel: '문제',
-    question: '주어진 알파벳들을 모두 사용하여 하나의 단어를 완성하시오.',
+    question: '주어진 알파벳들을 모두 사용하여 한 단어를 완성하시오.',
     answer: 'NEW DOOR',
     answers: ['NEW DOOR', 'NEWDOOR'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
@@ -302,6 +302,31 @@ function isBooleanRecord(value: unknown): value is Record<string, boolean> {
 
 function loadStoredSession(): Partial<AppSession> {
   try {
+    const previewArchiveId = new URLSearchParams(window.location.search).get('previewArchive')
+    const previewTeam = new URLSearchParams(window.location.search).get('team')
+    const previewTeamOption = isTeamOption(previewTeam) ? previewTeam : '1조'
+    const previewStage = previewArchiveId ? getTeamStageByArchiveId(previewArchiveId, previewTeamOption) : null
+
+    if (previewStage !== null) {
+      return {
+        phase: 'step-puzzle',
+        storyIndex: 0,
+        challengeIndex: previewStage,
+        selectedTeam: previewTeamOption,
+        activeTeam: {
+          ...createFallbackTeamRecord(previewTeamOption),
+          current_stage: previewStage,
+          completed_count: Math.max(0, previewStage - 1),
+        },
+        recoveryCode: '',
+        bibleStep: 1,
+        gameStartedAt: Date.now(),
+        wrongAttempts: {},
+        lockedUntil: {},
+        revealedHints: {},
+      }
+    }
+
     const storedSession = window.localStorage.getItem(appSessionStorageKey)
 
     if (!storedSession) {
@@ -1468,7 +1493,6 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                   <br />
                   복구되었습니다.
                 </h1>
-                <p className="home-subtitle">복구되지 않은 기록 7개</p>
               </div>
             </header>
 
@@ -1509,12 +1533,31 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
               <section className="home-card home-card-progress reveal-soft">
                 <p className="home-card-label">RESTORED RECORDS</p>
-                <p className="home-progress-value">
-                  {restoredRecordCount} <span>/ 7</span>
-                </p>
-                <p className="home-card-title">복구된 기록</p>
-                <div className="home-progress-bar" aria-hidden="true">
-                  <span style={{ width: `${Math.max(12, (restoredRecordCount / problemStages.length) * 100)}%` }} />
+                <div className="home-progress-summary">
+                  <p className="home-card-title">복구 단계</p>
+                  <p className="home-progress-value">
+                    {restoredRecordCount} <span>/ 7</span>
+                  </p>
+                </div>
+                <div className="home-stage-path" aria-label={`복구 단계 ${restoredRecordCount}/7`}>
+                  {orderedArchives.map((archive, index) => {
+                    const stageNumber = index + 1
+                    const isRestored = stageNumber <= restoredRecordCount
+                    const isCurrent = !hasCompletedJourney && stageNumber === challengeIndex
+                    const stateLabel = isRestored ? '복구 완료' : isCurrent ? '현재 단계' : '잠김'
+
+                    return (
+                      <div
+                        className={`home-stage-node ${isRestored ? 'is-restored' : ''} ${isCurrent ? 'is-current' : ''}`}
+                        key={`home-stage-${archive.id}`}
+                      >
+                        <span className="home-stage-dot" aria-label={`ARCHIVE #${archive.id} ${stateLabel}`}>
+                          {isRestored ? '✓' : stageNumber}
+                        </span>
+                        <span className="home-stage-label">{archive.name}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </section>
 
@@ -1601,14 +1644,6 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
             <div className="hint-card-list">
               <section className="home-card hint-card reveal-soft">
-                <p className="home-card-label">CURRENT HINT</p>
-                <h2 className="hint-card-title">{currentProblem.title}</h2>
-                <p className="hint-card-copy">
-                  {currentProblem.clue}
-                </p>
-              </section>
-
-              <section className="home-card hint-card reveal-soft">
                 <p className="home-card-label">HINT USAGE</p>
                 <p className="home-progress-value">
                   {activeTeam?.hint_count ?? 0}
@@ -1622,8 +1657,14 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 onClick={() => handleArchiveOpen(currentProblem.archiveId)}
               >
                 <span className="home-card-label">NEXT ACTION</span>
-                <span className="hint-card-title">첫 번째 조사로 이동</span>
-                <span className="hint-card-copy">QR 신호를 스캔하고 기록 복구를 시작합니다.</span>
+                <span className="hint-card-title">
+                  {hasCompletedJourney ? `${finalDestination}으로 이동` : `${currentArchive.name}으로 이동`}
+                </span>
+                <span className="hint-card-copy">
+                  {hasCompletedJourney
+                    ? '모든 기록이 복구되었습니다. 마지막 장소로 돌아가십시오.'
+                    : `${currentProblem.title} 기록을 복구하려면 현장 QR 신호를 스캔하십시오.`}
+                </span>
               </button>
             </div>
 
