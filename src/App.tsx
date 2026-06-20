@@ -134,18 +134,18 @@ const problemStages = [
     archiveId: '04',
     title: '성경 암호 해독',
     intro: [
-      '오래된 두루마리 속에 손상된 구절 하나가 남아 있다.',
-      '빈칸에 들어갈 이름을 복구해야 기록이 열린다.',
-      '띄어쓰기 없이 이어진 말씀의 이름을 입력해야 한다.',
+      '오래된 두루마리 속에는 숫자와 구절이 함께 봉인되어 있다.',
+      '성경 속 숫자를 모아 암호 코드를 만들고 마지막 말씀을 복구해야 한다.',
+      '세 번의 해독을 끝내야 기록이 열린다.',
     ],
     story: [
       '오래된 두루마리 속에는',
-      '빈칸이 남은 구절 하나가 보존되어 있다.',
-      '손상된 이름을 바로 읽어낼 때',
-      '감추어진 기록이 다시 열린다.',
+      '네 개의 숫자와 손상된 구절이 함께 보존되어 있다.',
+      '말씀 속 숫자를 따라가면',
+      '감추어진 마지막 이름이 드러난다.',
     ],
     questionLabel: '문제',
-    question: '과연 빈칸 [ ? ]에 들어갈 예수님의 말씀은 무엇일까요? 띄어쓰기 없이 입력하시오.',
+    question: '성경 구절에서 A, B, C, D 값을 찾아 순서대로 입력하십시오.',
     answer: '여호와이스라엘',
     answers: ['여호와이스라엘'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
@@ -258,6 +258,7 @@ type AppSession = {
   selectedTeam: TeamOption | null
   activeTeam: TeamRecord | null
   recoveryCode: string
+  bibleStep: number
   gameStartedAt: number | null
   wrongAttempts: Record<string, number>
   lockedUntil: Record<string, number>
@@ -318,6 +319,7 @@ function loadStoredSession(): Partial<AppSession> {
       selectedTeam: isTeamOption(parsedSession.selectedTeam) ? parsedSession.selectedTeam : null,
       activeTeam: parsedSession.activeTeam ?? null,
       recoveryCode: typeof parsedSession.recoveryCode === 'string' ? parsedSession.recoveryCode : '',
+      bibleStep: typeof parsedSession.bibleStep === 'number' ? parsedSession.bibleStep : 1,
       gameStartedAt: typeof parsedSession.gameStartedAt === 'number' ? parsedSession.gameStartedAt : null,
       wrongAttempts: isNumberRecord(parsedSession.wrongAttempts) ? parsedSession.wrongAttempts : {},
       lockedUntil: isNumberRecord(parsedSession.lockedUntil) ? parsedSession.lockedUntil : {},
@@ -406,6 +408,30 @@ function getArchiveQrValue(archiveId: string) {
 
 function getProblemAnswers(problem: (typeof problemStages)[number]) {
   return 'answers' in problem ? problem.answers : [problem.answer]
+}
+
+function getBibleStepAnswers(step: number) {
+  if (step === 1) {
+    return ['24077']
+  }
+
+  if (step === 2) {
+    return ['35']
+  }
+
+  return ['여호와이스라엘']
+}
+
+function getBibleStepQuestion(step: number) {
+  if (step === 1) {
+    return '성경 구절에서 A, B, C, D 값을 찾아 순서대로 입력하십시오.'
+  }
+
+  if (step === 2) {
+    return '최종 암호 코드 = (B-A×C)+D+A 값을 입력하십시오.'
+  }
+
+  return '예레미야 35장 19절의 빈칸 [ ? ]에 들어갈 말씀을 띄어쓰기 없이 입력하십시오.'
 }
 
 function getTeamStageByArchiveId(archiveId: string, teamName: TeamOption | null | undefined) {
@@ -597,6 +623,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [activeTeam, setActiveTeam] = useState<TeamRecord | null>(storedSession.activeTeam ?? null)
   const [isTeamSelectLoading, setIsTeamSelectLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
+  const [bibleStep, setBibleStep] = useState(Math.max(1, Math.min(storedSession.bibleStep ?? 1, 3)))
   const [puzzleFeedback, setPuzzleFeedback] = useState('')
   const [gameStartedAt, setGameStartedAt] = useState<number | null>(storedSession.gameStartedAt ?? null)
   const [wrongAttempts, setWrongAttempts] = useState<Record<string, number>>(storedSession.wrongAttempts ?? {})
@@ -612,6 +639,8 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const qrVideoRef = useRef<HTMLVideoElement | null>(null)
   const qrScannerControlsRef = useRef<IScannerControls | null>(null)
   const secretAdminTapTimerRef = useRef<number | null>(null)
+  const qrAdminBypassTimerRef = useRef<number | null>(null)
+  const qrAdminBypassTriggeredRef = useRef(false)
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -623,13 +652,14 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         selectedTeam,
         activeTeam,
         recoveryCode,
+        bibleStep,
         gameStartedAt,
         wrongAttempts,
         lockedUntil,
         revealedHints,
       } satisfies AppSession),
     )
-  }, [activeTeam, challengeIndex, gameStartedAt, lockedUntil, phase, recoveryCode, revealedHints, selectedTeam, storyIndex, wrongAttempts])
+  }, [activeTeam, bibleStep, challengeIndex, gameStartedAt, lockedUntil, phase, recoveryCode, revealedHints, selectedTeam, storyIndex, wrongAttempts])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -717,6 +747,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       }
 
       qrScannerControlsRef.current?.stop()
+      if (qrAdminBypassTimerRef.current !== null) {
+        window.clearTimeout(qrAdminBypassTimerRef.current)
+      }
     }
   }, [])
 
@@ -724,6 +757,8 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const orderedArchives = getTeamArchiveOrder(teamForOrder).map((archiveId) => getArchiveById(archiveId))
   const currentProblem = getTeamProblemByStage(challengeIndex, teamForOrder)
   const currentArchive = getTeamArchiveByStage(challengeIndex, teamForOrder)
+  const isCurrentBibleCipher = 'puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher'
+  const currentQuestion = isCurrentBibleCipher ? getBibleStepQuestion(bibleStep) : currentProblem.question
   const hasCompletedJourney = Boolean(activeTeam?.is_finished || (activeTeam?.completed_count ?? 0) >= problemStages.length)
   const restoredRecordCount = Math.min(
     problemStages.length,
@@ -773,6 +808,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setSelectedTeam(null)
     setActiveTeam(null)
     setRecoveryCode('')
+    setBibleStep(1)
     setPuzzleFeedback('')
     setGameStartedAt(null)
     setWrongAttempts({})
@@ -845,6 +881,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     setChallengeIndex(Math.max(1, Math.min(nextChallengeIndex, problemStages.length)))
     setRecoveryCode('')
+    setBibleStep(1)
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
@@ -857,7 +894,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       return
     }
 
-    const isCorrect = getProblemAnswers(currentProblem).some(
+    const isBibleCipher = 'puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher'
+    const expectedAnswers = isBibleCipher ? getBibleStepAnswers(bibleStep) : getProblemAnswers(currentProblem)
+    const isCorrect = expectedAnswers.some(
       (answer) => normalizeAnswer(recoveryCode) === normalizeAnswer(answer),
     )
 
@@ -894,6 +933,16 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       ...current,
       [currentProblem.archiveId]: 0,
     }))
+
+    if (isBibleCipher && bibleStep < 3) {
+      setPuzzleFeedback('정답입니다.\n다음 해독 단계가 열렸습니다.')
+      setRecoveryCode('')
+      window.setTimeout(() => {
+        setBibleStep((current) => Math.min(3, current + 1))
+        setPuzzleFeedback('')
+      }, 450)
+      return
+    }
 
     if (challengeIndex === 1 && gameStartedAt === null) {
       setGameStartedAt(Date.now())
@@ -936,6 +985,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     setChallengeIndex((current) => Math.min(problemStages.length, current + 1))
     setRecoveryCode('')
+    setBibleStep(1)
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
@@ -978,6 +1028,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }
 
   const handleQrScanStart = async () => {
+    if (qrAdminBypassTriggeredRef.current) {
+      qrAdminBypassTriggeredRef.current = false
+      return
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
       setQrScannerStatus('error')
       setQrScannerMessage('이 브라우저에서는 카메라 접근을 사용할 수 없습니다.')
@@ -1031,6 +1086,34 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       qrScannerControlsRef.current = null
       setQrScannerStatus('error')
       setQrScannerMessage('카메라 권한을 허용한 뒤 다시 시도해주세요.')
+    }
+  }
+
+  const handleQrAdminBypassStart = () => {
+    if (phase !== 'step-intro' || qrScannerStatus === 'scanning' || qrScannerStatus === 'found') {
+      return
+    }
+
+    if (qrAdminBypassTimerRef.current !== null) {
+      window.clearTimeout(qrAdminBypassTimerRef.current)
+    }
+
+    qrAdminBypassTriggeredRef.current = false
+    qrAdminBypassTimerRef.current = window.setTimeout(() => {
+      qrAdminBypassTimerRef.current = null
+      qrAdminBypassTriggeredRef.current = true
+      qrScannerControlsRef.current?.stop()
+      qrScannerControlsRef.current = null
+      setQrScannerStatus('found')
+      setQrScannerMessage('관리자 신호가 확인되었습니다.')
+      window.setTimeout(() => setPhase('step-story'), 300)
+    }, 3000)
+  }
+
+  const handleQrAdminBypassEnd = () => {
+    if (qrAdminBypassTimerRef.current !== null) {
+      window.clearTimeout(qrAdminBypassTimerRef.current)
+      qrAdminBypassTimerRef.current = null
     }
   }
 
@@ -1135,8 +1218,68 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     }
 
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher') {
+      if (bibleStep === 1) {
+        const references = [
+          {
+            label: 'A',
+            verse: '마태복음 14장 17절',
+            text: '떡 다섯 개와 물고기 [ A ] 마리뿐이니이다.',
+          },
+          {
+            label: 'B',
+            verse: '창세기 7장 12절',
+            text: '[ B ] 주야를 비가 땅에 쏟아졌더라.',
+          },
+          {
+            label: 'C',
+            verse: '여호수아 6장 4절',
+            text: '제사장 [ C ] 명은 [ C ] 양각 나팔을 잡고...',
+          },
+          {
+            label: 'D',
+            verse: '요한계시록 2장 1절',
+            text: '오른손에 있는 [ D ] 별을 붙잡고...',
+          },
+        ]
+
+        return (
+          <div className="cipher-card bible-cipher-card" aria-label="성경 암호 1단계">
+            <p className="bible-step-label">STEP 1 / 3 · 숫자 수집</p>
+            <div className="bible-reference-list">
+              {references.map((reference) => (
+                <div className="bible-reference-item" key={reference.label}>
+                  <strong>[{reference.label}] {reference.verse}</strong>
+                  <p>{reference.text}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bible-formula">A, B, C, D 순서대로 입력</div>
+          </div>
+        )
+      }
+
+      if (bibleStep === 2) {
+        return (
+          <div className="cipher-card bible-cipher-card" aria-label="성경 암호 2단계">
+            <p className="bible-step-label">STEP 2 / 3 · 크로스 연산</p>
+            <div className="bible-code-values" aria-label="수집한 숫자">
+              <span>A = 2</span>
+              <span>B = 40</span>
+              <span>C = 7</span>
+              <span>D = 7</span>
+            </div>
+            <div className="bible-equation">
+              <span>최종 암호 코드</span>
+              <strong>(B-A×C)+D+A</strong>
+              <em>= ?</em>
+            </div>
+          </div>
+        )
+      }
+
       return (
-        <div className="cipher-card bible-cipher-card" aria-label="성경 암호 문제">
+        <div className="cipher-card bible-cipher-card" aria-label="성경 암호 3단계">
+          <p className="bible-step-label">STEP 3 / 3 · 최종 구절</p>
           <p className="bible-verse-line">
             그러므로 만군의 <strong>[ ? ]</strong>의 하나님께서 이와 같이 말씀하시니라
           </p>
@@ -1523,6 +1666,10 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 type="button"
                 className="problem-pill-button qr-scan-button"
                 onClick={handleQrScanStart}
+                onPointerDown={handleQrAdminBypassStart}
+                onPointerUp={handleQrAdminBypassEnd}
+                onPointerLeave={handleQrAdminBypassEnd}
+                onPointerCancel={handleQrAdminBypassEnd}
                 disabled={qrScannerStatus === 'scanning' || qrScannerStatus === 'found'}
               >
                 {qrScannerStatus === 'scanning'
@@ -1595,7 +1742,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
             <div className="problem-puzzle-copy reveal-soft">
               <h1>{currentProblem.title}</h1>
               <p className="problem-story-brief">{currentProblem.story[0]}</p>
-              <p className="problem-question-copy">{currentProblem.question}</p>
+              <p className="problem-question-copy">{currentQuestion}</p>
               {renderPuzzleCard()}
               <label className="problem-code-field">
                 <span>ANSWER</span>
@@ -1808,6 +1955,7 @@ function App() {
         selectedTeam: null,
         activeTeam: null,
         recoveryCode: '',
+        bibleStep: 1,
         gameStartedAt: null,
         wrongAttempts: {},
         lockedUntil: {},

@@ -1483,7 +1483,86 @@
 
 .bible-cipher-card {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+}
+
+.bible-step-label {
+  margin: 0;
+  color: #9ee8ff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.13em;
+}
+
+.bible-reference-list {
+  display: grid;
+  gap: 8px;
+}
+
+.bible-reference-item {
+  padding: 10px 11px;
+  border: 1px solid rgba(158, 232, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.bible-reference-item strong {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(247, 251, 255, 0.9);
+  font-family: var(--font-story);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bible-reference-item p {
+  margin: 0;
+  color: rgba(247, 251, 255, 0.68);
+  font-family: var(--font-story);
+  font-size: 12px;
+  line-height: 1.48;
+}
+
+.bible-code-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bible-code-values span {
+  padding: 12px 8px;
+  border: 1px solid rgba(154, 240, 195, 0.15);
+  border-radius: 14px;
+  background: rgba(154, 240, 195, 0.06);
+  color: #9af0c3;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+.bible-equation {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bible-equation span,
+.bible-equation em {
+  color: rgba(247, 251, 255, 0.68);
+  font-family: var(--font-story);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.bible-equation strong {
+  color: rgba(247, 251, 255, 0.94);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .bible-verse-line {
