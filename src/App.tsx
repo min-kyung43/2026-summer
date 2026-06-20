@@ -42,6 +42,7 @@ const archives = [
 
 const teamOptions = ['1조', '2조', '3조', '4조', '5조'] as const
 const teamCodes = teamOptions.map((_, index) => `TEAM${String(index + 1).padStart(2, '0')}`)
+const emptyBibleStepValues = { A: '', B: '', C: '', D: '' }
 const finalDestination = '본당'
 const appSessionStorageKey = 'lost-light-app-session'
 const adminUnlockStorageKey = 'lost-light-admin-unlocked'
@@ -197,8 +198,8 @@ const problemStages = [
     ],
     questionLabel: '문제',
     question: '주어진 알파벳들을 모두 사용하여 한 단어를 완성하시오.',
-    answer: 'NEW DOOR',
-    answers: ['NEW DOOR', 'NEWDOOR'],
+    answer: 'ONE WORD',
+    answers: ['ONE WORD', 'ONEWORD'],
     clueTitle: '문제를 풀었을 때 얻는 단서',
     clue: '가장 높은 곳에서 희미한 빛이 감지된다. 아직 완전히 꺼지지 않은 흔적.',
     actionText: 'QR 스캔 시작',
@@ -259,6 +260,7 @@ type AppSession = {
   activeTeam: TeamRecord | null
   recoveryCode: string
   bibleStep: number
+  bibleStepValues: typeof emptyBibleStepValues
   gameStartedAt: number | null
   wrongAttempts: Record<string, number>
   lockedUntil: Record<string, number>
@@ -300,6 +302,16 @@ function isBooleanRecord(value: unknown): value is Record<string, boolean> {
   return Boolean(value) && typeof value === 'object'
 }
 
+function isBibleStepValues(value: unknown): value is typeof emptyBibleStepValues {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const values = value as Record<string, unknown>
+
+  return ['A', 'B', 'C', 'D'].every((key) => typeof values[key] === 'string')
+}
+
 function loadStoredSession(): Partial<AppSession> {
   try {
     const previewArchiveId = new URLSearchParams(window.location.search).get('previewArchive')
@@ -320,6 +332,7 @@ function loadStoredSession(): Partial<AppSession> {
         },
         recoveryCode: '',
         bibleStep: 1,
+        bibleStepValues: emptyBibleStepValues,
         gameStartedAt: Date.now(),
         wrongAttempts: {},
         lockedUntil: {},
@@ -345,6 +358,7 @@ function loadStoredSession(): Partial<AppSession> {
       activeTeam: parsedSession.activeTeam ?? null,
       recoveryCode: typeof parsedSession.recoveryCode === 'string' ? parsedSession.recoveryCode : '',
       bibleStep: typeof parsedSession.bibleStep === 'number' ? parsedSession.bibleStep : 1,
+      bibleStepValues: isBibleStepValues(parsedSession.bibleStepValues) ? parsedSession.bibleStepValues : emptyBibleStepValues,
       gameStartedAt: typeof parsedSession.gameStartedAt === 'number' ? parsedSession.gameStartedAt : null,
       wrongAttempts: isNumberRecord(parsedSession.wrongAttempts) ? parsedSession.wrongAttempts : {},
       lockedUntil: isNumberRecord(parsedSession.lockedUntil) ? parsedSession.lockedUntil : {},
@@ -649,6 +663,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const [isTeamSelectLoading, setIsTeamSelectLoading] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(storedSession.recoveryCode ?? '')
   const [bibleStep, setBibleStep] = useState(Math.max(1, Math.min(storedSession.bibleStep ?? 1, 3)))
+  const [bibleStepValues, setBibleStepValues] = useState(storedSession.bibleStepValues ?? emptyBibleStepValues)
   const [puzzleFeedback, setPuzzleFeedback] = useState('')
   const [gameStartedAt, setGameStartedAt] = useState<number | null>(storedSession.gameStartedAt ?? null)
   const [wrongAttempts, setWrongAttempts] = useState<Record<string, number>>(storedSession.wrongAttempts ?? {})
@@ -678,13 +693,14 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         activeTeam,
         recoveryCode,
         bibleStep,
+        bibleStepValues,
         gameStartedAt,
         wrongAttempts,
         lockedUntil,
         revealedHints,
       } satisfies AppSession),
     )
-  }, [activeTeam, bibleStep, challengeIndex, gameStartedAt, lockedUntil, phase, recoveryCode, revealedHints, selectedTeam, storyIndex, wrongAttempts])
+  }, [activeTeam, bibleStep, bibleStepValues, challengeIndex, gameStartedAt, lockedUntil, phase, recoveryCode, revealedHints, selectedTeam, storyIndex, wrongAttempts])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -783,6 +799,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const currentProblem = getTeamProblemByStage(challengeIndex, teamForOrder)
   const currentArchive = getTeamArchiveByStage(challengeIndex, teamForOrder)
   const isCurrentBibleCipher = 'puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher'
+  const isBibleFirstStep = isCurrentBibleCipher && bibleStep === 1
   const currentQuestion = isCurrentBibleCipher ? getBibleStepQuestion(bibleStep) : currentProblem.question
   const hasCompletedJourney = Boolean(activeTeam?.is_finished || (activeTeam?.completed_count ?? 0) >= problemStages.length)
   const restoredRecordCount = Math.min(
@@ -802,6 +819,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const gameTimerLabel = gameTimeRemaining === null
     ? null
     : `${String(Math.floor(gameTimeRemaining / 60000)).padStart(2, '0')}:${String(Math.floor((gameTimeRemaining % 60000) / 1000)).padStart(2, '0')}`
+  const hasMissionFailed = gameTimeRemaining === 0 && !hasCompletedJourney
 
   const handleAdvanceStory = () => {
     if (storyIndex === storySlides.length - 1) {
@@ -839,6 +857,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setActiveTeam(null)
     setRecoveryCode('')
     setBibleStep(1)
+    setBibleStepValues(emptyBibleStepValues)
     setPuzzleFeedback('')
     setGameStartedAt(null)
     setWrongAttempts({})
@@ -914,6 +933,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setChallengeIndex(Math.max(1, Math.min(nextChallengeIndex, problemStages.length)))
     setRecoveryCode('')
     setBibleStep(1)
+    setBibleStepValues(emptyBibleStepValues)
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
@@ -928,8 +948,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
     const isBibleCipher = 'puzzleType' in currentProblem && currentProblem.puzzleType === 'bibleCipher'
     const expectedAnswers = isBibleCipher ? getBibleStepAnswers(bibleStep) : getProblemAnswers(currentProblem)
+    const submittedAnswer = isBibleCipher && bibleStep === 1
+      ? `${bibleStepValues.A}${bibleStepValues.B}${bibleStepValues.C}${bibleStepValues.D}`
+      : recoveryCode
     const isCorrect = expectedAnswers.some(
-      (answer) => normalizeAnswer(recoveryCode) === normalizeAnswer(answer),
+      (answer) => normalizeAnswer(submittedAnswer) === normalizeAnswer(answer),
     )
 
     if (!isCorrect) {
@@ -1018,6 +1041,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setChallengeIndex((current) => Math.min(problemStages.length, current + 1))
     setRecoveryCode('')
     setBibleStep(1)
+    setBibleStepValues(emptyBibleStepValues)
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
@@ -1285,7 +1309,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 </div>
               ))}
             </div>
-            <div className="bible-formula">A, B, C, D 순서대로 입력</div>
+            <div className="bible-formula">아래 입력칸에 A, B, C, D 값을 각각 입력</div>
           </div>
         )
       }
@@ -1326,7 +1350,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'alphabetMix') {
       return (
         <div className="cipher-card alphabet-cipher-card" aria-label="알파벳 조합 문제">
-          {['N', 'E', 'W', 'D', 'O', 'O', 'R'].map((letter, index) => (
+          {['O', 'N', 'E', 'W', 'O', 'R', 'D'].map((letter, index) => (
             <span key={`letter-${letter}-${index + 1}`}>{letter}</span>
           ))}
         </div>
@@ -1353,6 +1377,20 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
           <div className={`game-timer-pill ${gameTimeRemaining === 0 ? 'is-expired' : ''}`} aria-label="남은 탐색 시간">
             <span>TIME</span>
             <strong>{gameTimerLabel}</strong>
+          </div>
+        ) : null}
+
+        {hasMissionFailed ? (
+          <div className="mission-failed-overlay" role="alert" aria-live="assertive">
+            <div className="mission-failed-panel">
+              <p className="mission-failed-kicker">MISSION FAILED</p>
+              <h2>임무 실패</h2>
+              <p>
+                영원한 어둠 속에 갇혀버렸다 ...
+                <br />
+                본당으로 복귀하세요
+              </p>
+            </div>
           </div>
         ) : null}
 
@@ -1794,21 +1832,47 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <p className="problem-story-brief">{currentProblem.story[0]}</p>
               <p className="problem-question-copy">{currentQuestion}</p>
               {renderPuzzleCard()}
-              <label className="problem-code-field">
-                <span>ANSWER</span>
-                <input
-                  value={recoveryCode}
-                  onChange={(event) => {
-                    setRecoveryCode(event.target.value)
-                    if (puzzleFeedback) {
-                      setPuzzleFeedback('')
-                    }
-                  }}
-                  aria-label="정답 입력"
-                  placeholder="정답을 입력하세요"
-                  disabled={isPuzzleLocked}
-                />
-              </label>
+              {isBibleFirstStep ? (
+                <div className="bible-answer-grid" aria-label="성경 숫자 입력">
+                  {(['A', 'B', 'C', 'D'] as const).map((key) => (
+                    <label className="bible-answer-field" key={`bible-answer-${key}`}>
+                      <span>{key}</span>
+                      <input
+                        inputMode="numeric"
+                        value={bibleStepValues[key]}
+                        onChange={(event) => {
+                          setBibleStepValues((current) => ({
+                            ...current,
+                            [key]: event.target.value.replace(/\D/g, ''),
+                          }))
+                          if (puzzleFeedback) {
+                            setPuzzleFeedback('')
+                          }
+                        }}
+                        aria-label={`${key} 값 입력`}
+                        placeholder={key}
+                        disabled={isPuzzleLocked}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <label className="problem-code-field">
+                  <span>ANSWER</span>
+                  <input
+                    value={recoveryCode}
+                    onChange={(event) => {
+                      setRecoveryCode(event.target.value)
+                      if (puzzleFeedback) {
+                        setPuzzleFeedback('')
+                      }
+                    }}
+                    aria-label="정답 입력"
+                    placeholder="정답을 입력하세요"
+                    disabled={isPuzzleLocked}
+                  />
+                </label>
+              )}
               {puzzleFeedback ? <p className="problem-feedback">{puzzleFeedback}</p> : null}
               {isPuzzleLocked ? (
                 <p className="problem-feedback">입력이 잠겼습니다. {puzzleLockRemaining}초 후 다시 시도하십시오.</p>
@@ -2006,6 +2070,7 @@ function App() {
         activeTeam: null,
         recoveryCode: '',
         bibleStep: 1,
+        bibleStepValues: emptyBibleStepValues,
         gameStartedAt: null,
         wrongAttempts: {},
         lockedUntil: {},

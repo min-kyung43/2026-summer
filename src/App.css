@@ -96,6 +96,59 @@
   box-shadow: 0 0 24px rgba(240, 197, 197, 0.14);
 }
 
+.mission-failed-overlay {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at center, rgba(80, 11, 18, 0.22), transparent 34%),
+    rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.mission-failed-panel {
+  width: min(100%, 342px);
+  padding: 28px 24px;
+  border: 1px solid rgba(240, 197, 197, 0.22);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(240, 197, 197, 0.1), transparent 38%),
+    rgba(10, 10, 12, 0.92);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.mission-failed-kicker {
+  margin: 0 0 12px;
+  color: rgba(240, 197, 197, 0.72);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+}
+
+.mission-failed-panel h2 {
+  margin: 0 0 16px;
+  color: #f7fbff;
+  font-family: var(--font-story);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.mission-failed-panel p:last-child {
+  margin: 0;
+  color: rgba(247, 251, 255, 0.78);
+  font-family: var(--font-story);
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+
 .story-screen,
 .boot-screen {
   position: relative;
@@ -105,16 +158,17 @@
 
 .story-screen {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(150px, 31svh, 268px) 0 0;
+  padding: clamp(120px, 28svh, 268px) 0 clamp(72px, 10svh, 104px);
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .story-content {
@@ -201,18 +255,17 @@
 }
 
 .story-bottom {
-  position: sticky;
+  position: absolute;
   z-index: 4;
-  bottom: 0;
+  right: 0;
+  bottom: clamp(24px, 6svh, 52px);
+  left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   margin-top: auto;
-  padding: 18px 0 calc(28px + env(safe-area-inset-bottom));
-  background:
-    linear-gradient(180deg, rgba(5, 6, 8, 0), rgba(5, 6, 8, 0.86) 32%, #050608 100%);
-  backdrop-filter: blur(10px);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .progress-indicator {
@@ -1210,7 +1263,7 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 118px 6px 0;
+  padding: 118px 6px calc(112px + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 
@@ -1733,6 +1786,43 @@
   letter-spacing: 0.04em;
 }
 
+.bible-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bible-answer-field {
+  display: grid;
+  gap: 6px;
+}
+
+.bible-answer-field span {
+  color: rgba(154, 240, 195, 0.72);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+}
+
+.bible-answer-field input {
+  min-width: 0;
+  height: 46px;
+  border: 1px solid rgba(154, 240, 195, 0.22);
+  border-radius: 14px;
+  background: rgba(154, 240, 195, 0.06);
+  color: #f7fbff;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+}
+
+.bible-answer-field input:focus {
+  border-color: rgba(154, 240, 195, 0.58);
+  box-shadow: 0 0 0 3px rgba(154, 240, 195, 0.08);
+}
+
 .alphabet-cipher-card {
   display: flex;
   flex-wrap: wrap;
@@ -1792,13 +1882,14 @@
 }
 
 .problem-bottom-row {
-  position: sticky;
+  position: fixed;
   z-index: 5;
-  right: auto;
+  right: max(24px, calc((100vw - 342px) / 2));
   bottom: 0;
-  left: auto;
-  width: 100%;
-  margin-top: auto;
+  left: max(24px, calc((100vw - 342px) / 2));
+  width: auto;
+  max-width: 342px;
+  margin: 0 auto;
   padding: 14px 0 calc(16px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2053,7 +2144,8 @@
 }
 
 .problem-pill-button:disabled,
-.problem-code-field input:disabled {
+.problem-code-field input:disabled,
+.bible-answer-field input:disabled {
   opacity: 0.48;
   cursor: default;
 }
@@ -2805,11 +2897,15 @@
     align-items: flex-start;
   }
 
-  .story-screen,
   .boot-screen,
   .team-select-screen,
   .archive-screen {
     min-height: 844px;
+  }
+
+  .story-screen {
+    min-height: 100svh;
+    height: 100svh;
   }
 
   .problem-screen {
@@ -2818,6 +2914,30 @@
 }
 
 @media (max-height: 760px) {
+  .story-screen {
+    padding-top: clamp(104px, 24svh, 160px);
+    padding-bottom: 74px;
+  }
+
+  .story-counter {
+    margin-bottom: 18px;
+  }
+
+  .story-copy {
+    gap: 18px;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .story-quote-block {
+    gap: 14px;
+    margin-top: 2px;
+  }
+
+  .story-bottom {
+    bottom: 24px;
+  }
+
   .problem-step-row {
     top: 118px;
   }
@@ -2948,7 +3068,9 @@
   }
 
   .problem-bottom-row {
-    width: 100%;
+    right: clamp(16px, 6vw, 24px);
+    left: clamp(16px, 6vw, 24px);
+    width: auto;
   }
 
   .problem-restored-header {
