@@ -79,6 +79,15 @@ const maxHintCount = 3
 const handSignalAnswer = '0'
 const circleCoordinateAnswer = '19767'
 let sharedAudioContext: AudioContext | null = null
+let ambientSound:
+  | {
+    oscillators: OscillatorNode[]
+    filterNode: BiquadFilterNode
+    gainNode: GainNode
+    lfo: OscillatorNode
+    lfoGain: GainNode
+  }
+  | null = null
 
 function getAudioContext() {
   if (typeof window === 'undefined') {
@@ -172,6 +181,54 @@ function playNoiseBurst(duration = 0.12, gain = 0.03, filterFrequency = 900) {
   gainNode.connect(audioContext.destination)
   source.start(startTime)
   source.stop(startTime + duration)
+}
+
+function startAmbientSound() {
+  const audioContext = getAudioContext()
+
+  if (!audioContext || ambientSound) {
+    return
+  }
+
+  const filterNode = audioContext.createBiquadFilter()
+  const gainNode = audioContext.createGain()
+  const lfo = audioContext.createOscillator()
+  const lfoGain = audioContext.createGain()
+  const startTime = audioContext.currentTime
+  const droneDefinitions: Array<{ frequency: number; type: OscillatorType; detune: number }> = [
+    { frequency: 55, type: 'sine', detune: -8 },
+    { frequency: 82.41, type: 'sine', detune: 6 },
+    { frequency: 146.83, type: 'triangle', detune: -12 },
+  ]
+
+  filterNode.type = 'lowpass'
+  filterNode.frequency.setValueAtTime(520, startTime)
+  filterNode.Q.setValueAtTime(0.7, startTime)
+  gainNode.gain.setValueAtTime(0.0001, startTime)
+  gainNode.gain.linearRampToValueAtTime(0.014, startTime + 1.8)
+
+  lfo.type = 'sine'
+  lfo.frequency.setValueAtTime(0.045, startTime)
+  lfoGain.gain.setValueAtTime(0.003, startTime)
+  lfo.connect(lfoGain)
+  lfoGain.connect(gainNode.gain)
+
+  const oscillators = droneDefinitions.map((definition) => {
+    const oscillator = audioContext.createOscillator()
+
+    oscillator.type = definition.type
+    oscillator.frequency.setValueAtTime(definition.frequency, startTime)
+    oscillator.detune.setValueAtTime(definition.detune, startTime)
+    oscillator.connect(filterNode)
+    oscillator.start(startTime)
+
+    return oscillator
+  })
+
+  filterNode.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+  lfo.start(startTime)
+  ambientSound = { oscillators, filterNode, gainNode, lfo, lfoGain }
 }
 
 function playButtonSound() {
@@ -1037,6 +1094,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const secretAdminTapTimerRef = useRef<number | null>(null)
   const qrAdminBypassTimerRef = useRef<number | null>(null)
   const qrAdminBypassTriggeredRef = useRef(false)
+  const missionFailedTapCountRef = useRef(0)
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -1069,17 +1127,24 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }, [])
 
   useEffect(() => {
+    const handleFirstInteraction = () => {
+      startAmbientSound()
+    }
+
     const handleButtonClick = (event: MouseEvent) => {
       const target = event.target
 
       if (target instanceof Element && target.closest('button')) {
+        startAmbientSound()
         playButtonSound()
       }
     }
 
+    document.addEventListener('pointerdown', handleFirstInteraction)
     document.addEventListener('click', handleButtonClick)
 
     return () => {
+      document.removeEventListener('pointerdown', handleFirstInteraction)
       document.removeEventListener('click', handleButtonClick)
     }
   }, [])
@@ -1264,8 +1329,9 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setIsResetDialogOpen(false)
   }
 
-  const handleConfirmReset = () => {
+  const resetLocalProgress = () => {
     window.localStorage.removeItem(appSessionStorageKey)
+    window.localStorage.removeItem(fakeQrCountStorageKey)
     setPhase('team-select')
     setStoryIndex(0)
     setChallengeIndex(1)
@@ -1284,6 +1350,21 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setQrScannerMessage('')
     setIsTeamSelectLoading(false)
     setIsResetDialogOpen(false)
+  }
+
+  const handleConfirmReset = () => {
+    resetLocalProgress()
+  }
+
+  const handleMissionFailedTap = () => {
+    startAmbientSound()
+    missionFailedTapCountRef.current += 1
+
+    if (missionFailedTapCountRef.current >= 5) {
+      missionFailedTapCountRef.current = 0
+      playPuzzleSuccessSound()
+      resetLocalProgress()
+    }
   }
 
   const handleTeamSelect = async (teamName: TeamOption) => {
@@ -1848,7 +1929,14 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         ) : null}
 
         {hasMissionFailed ? (
-          <div className="mission-failed-overlay" role="alert" aria-live="assertive">
+          <button
+            type="button"
+            className="mission-failed-overlay"
+            role="alert"
+            aria-live="assertive"
+            aria-label="임무 실패 화면"
+            onClick={handleMissionFailedTap}
+          >
             <div className="mission-failed-panel">
               <p className="mission-failed-kicker">MISSION FAILED</p>
               <h2>임무 실패</h2>
@@ -1858,7 +1946,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 본당으로 복귀하세요
               </p>
             </div>
-          </div>
+          </button>
         ) : null}
 
         {phase === 'story' ? (

@@ -203,16 +203,27 @@
 }
 
 .mission-failed-overlay {
+  appearance: none;
   position: fixed;
   z-index: 80;
   inset: 0;
   display: grid;
   place-items: center;
   padding: 24px;
+  border: 0;
   background:
     radial-gradient(circle at center, rgba(80, 11, 18, 0.22), transparent 34%),
     rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+}
+
+.mission-failed-overlay:focus-visible {
+  outline: 2px solid rgba(240, 197, 197, 0.58);
+  outline-offset: -8px;
 }
 
 .mission-failed-panel {
@@ -2089,6 +2100,9 @@
 
 .problem-final-instruction {
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: rgba(247, 251, 255, 0.9);
   font-family: var(--font-story);
   font-size: 17px;
@@ -2096,6 +2110,7 @@
   line-height: 1.45;
   text-align: right;
   word-break: keep-all;
+  cursor: pointer;
 }
 
 .qr-scan-panel {
