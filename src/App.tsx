@@ -78,6 +78,135 @@ const maxWrongAttempts = 3
 const maxHintCount = 3
 const handSignalAnswer = '0'
 const circleCoordinateAnswer = '19767'
+let sharedAudioContext: AudioContext | null = null
+
+function getAudioContext() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+
+  if (!AudioContextConstructor) {
+    return null
+  }
+
+  sharedAudioContext ??= new AudioContextConstructor()
+
+  if (sharedAudioContext.state === 'suspended') {
+    void sharedAudioContext.resume()
+  }
+
+  return sharedAudioContext
+}
+
+function playTone(
+  frequency: number,
+  startDelay: number,
+  duration: number,
+  options: {
+    type?: OscillatorType
+    gain?: number
+    detune?: number
+    filterFrequency?: number
+    destination?: AudioNode
+  } = {},
+) {
+  const audioContext = getAudioContext()
+
+  if (!audioContext) {
+    return
+  }
+
+  const startTime = audioContext.currentTime + startDelay
+  const oscillator = audioContext.createOscillator()
+  const gainNode = audioContext.createGain()
+  const filterNode = audioContext.createBiquadFilter()
+
+  oscillator.type = options.type ?? 'sine'
+  oscillator.frequency.setValueAtTime(frequency, startTime)
+  oscillator.detune.setValueAtTime(options.detune ?? 0, startTime)
+  filterNode.type = 'lowpass'
+  filterNode.frequency.setValueAtTime(options.filterFrequency ?? 1600, startTime)
+  gainNode.gain.setValueAtTime(0.0001, startTime)
+  gainNode.gain.exponentialRampToValueAtTime(options.gain ?? 0.04, startTime + 0.018)
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+  oscillator.connect(filterNode)
+  filterNode.connect(gainNode)
+  gainNode.connect(options.destination ?? audioContext.destination)
+  oscillator.start(startTime)
+  oscillator.stop(startTime + duration + 0.04)
+}
+
+function playNoiseBurst(duration = 0.12, gain = 0.03, filterFrequency = 900) {
+  const audioContext = getAudioContext()
+
+  if (!audioContext) {
+    return
+  }
+
+  const bufferSize = Math.max(1, Math.floor(audioContext.sampleRate * duration))
+  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate)
+  const output = buffer.getChannelData(0)
+
+  for (let index = 0; index < bufferSize; index += 1) {
+    output[index] = (Math.random() * 2 - 1) * (1 - index / bufferSize)
+  }
+
+  const source = audioContext.createBufferSource()
+  const filterNode = audioContext.createBiquadFilter()
+  const gainNode = audioContext.createGain()
+  const startTime = audioContext.currentTime
+
+  source.buffer = buffer
+  filterNode.type = 'bandpass'
+  filterNode.frequency.setValueAtTime(filterFrequency, startTime)
+  filterNode.Q.setValueAtTime(4, startTime)
+  gainNode.gain.setValueAtTime(gain, startTime)
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+  source.connect(filterNode)
+  filterNode.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+  source.start(startTime)
+  source.stop(startTime + duration)
+}
+
+function playButtonSound() {
+  playTone(520, 0, 0.08, { type: 'triangle', gain: 0.018, filterFrequency: 1400 })
+  playTone(92, 0.008, 0.1, { type: 'sine', gain: 0.012, filterFrequency: 260 })
+}
+
+function playOnboardingSound() {
+  playTone(196, 0, 0.55, { type: 'sine', gain: 0.025, filterFrequency: 700 })
+  playTone(293.66, 0.06, 0.52, { type: 'sine', gain: 0.018, detune: -8, filterFrequency: 1000 })
+  playTone(739.99, 0.16, 0.38, { type: 'triangle', gain: 0.012, filterFrequency: 1900 })
+}
+
+function playBootSound() {
+  playNoiseBurst(0.16, 0.018, 720)
+  playTone(110, 0, 0.22, { type: 'sawtooth', gain: 0.016, filterFrequency: 420 })
+  playTone(440, 0.1, 0.18, { type: 'square', gain: 0.008, filterFrequency: 1600 })
+}
+
+function playQrFoundSound() {
+  playTone(659.25, 0, 0.1, { type: 'triangle', gain: 0.026, filterFrequency: 1800 })
+  playTone(987.77, 0.08, 0.18, { type: 'sine', gain: 0.022, filterFrequency: 2200 })
+}
+
+function playPuzzleSuccessSound() {
+  playTone(261.63, 0, 0.24, { type: 'sine', gain: 0.022, filterFrequency: 1000 })
+  playTone(392, 0.08, 0.28, { type: 'sine', gain: 0.024, filterFrequency: 1300 })
+  playTone(587.33, 0.18, 0.42, { type: 'triangle', gain: 0.026, filterFrequency: 1800 })
+}
+
+function playPuzzleFailureSound() {
+  playNoiseBurst(0.18, 0.026, 360)
+  playTone(220, 0, 0.22, { type: 'sawtooth', gain: 0.024, filterFrequency: 520 })
+  playTone(146.83, 0.08, 0.3, { type: 'sine', gain: 0.02, filterFrequency: 360 })
+}
 
 const problemStages = [
   {
@@ -940,6 +1069,33 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   }, [])
 
   useEffect(() => {
+    const handleButtonClick = (event: MouseEvent) => {
+      const target = event.target
+
+      if (target instanceof Element && target.closest('button')) {
+        playButtonSound()
+      }
+    }
+
+    document.addEventListener('click', handleButtonClick)
+
+    return () => {
+      document.removeEventListener('click', handleButtonClick)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (phase === 'story') {
+      playOnboardingSound()
+      return
+    }
+
+    if (phase === 'boot') {
+      playBootSound()
+    }
+  }, [phase, storyIndex])
+
+  useEffect(() => {
     if (!activeTeam?.team_code) {
       return
     }
@@ -1235,6 +1391,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
   const handlePuzzleSubmit = async () => {
     if (isPuzzleLocked) {
+      playPuzzleFailureSound()
       setPuzzleFeedback(`기록 접근이 잠시 제한되었습니다. ${puzzleLockRemaining}초 후 다시 시도하십시오.`)
       return
     }
@@ -1249,6 +1406,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     )
 
     if (!isCorrect) {
+      playPuzzleFailureSound()
       const nextAttemptCount = (wrongAttempts[currentProblem.archiveId] ?? 0) + 1
 
       if (nextAttemptCount >= maxWrongAttempts) {
@@ -1272,6 +1430,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       return
     }
 
+    playPuzzleSuccessSound()
     setPuzzleFeedback('기록 복구 완료.\n신호가 안정화되었습니다.')
     setWrongAttempts((current) => ({
       ...current,
@@ -1421,11 +1580,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
           if (fakeQrId) {
             qrScannerControlsRef.current.stop()
             qrScannerControlsRef.current = null
+            playPuzzleFailureSound()
             window.location.href = `/?fakeQr=${fakeQrId}`
             return
           }
 
           if (scannedValue !== getArchiveQrValue(currentProblem.archiveId)) {
+            playPuzzleFailureSound()
             setQrScannerStatus('error')
             setQrScannerMessage(`${currentArchive.name} QR만 인식할 수 있습니다.`)
             return
@@ -1435,6 +1596,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
           qrScannerControlsRef.current = null
           setQrScannerStatus('found')
           setQrScannerMessage('QR 신호가 확인되었습니다.')
+          playQrFoundSound()
           window.setTimeout(() => setPhase('step-story'), 500)
         }
       )
@@ -1445,6 +1607,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       qrScannerControlsRef.current = null
       setQrScannerStatus('error')
       setQrScannerMessage('카메라 권한을 허용한 뒤 다시 시도해주세요.')
+      playPuzzleFailureSound()
     }
   }
 
@@ -1465,6 +1628,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       qrScannerControlsRef.current = null
       setQrScannerStatus('found')
       setQrScannerMessage('관리자 신호가 확인되었습니다.')
+      playQrFoundSound()
       window.setTimeout(() => setPhase('step-story'), 300)
     }, 3000)
   }
@@ -2265,7 +2429,13 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                 ))}
               </div>
               {challengeIndex >= problemStages.length ? (
-                <p className="problem-final-instruction">본당으로 이동하세요.</p>
+                <button
+                  type="button"
+                  className="problem-final-instruction"
+                  onClick={handleNextSignal}
+                >
+                  본당으로 이동하세요.
+                </button>
               ) : (
                 <button
                   type="button"
