@@ -86,6 +86,7 @@ let ambientSound:
     gainNode: GainNode
     lfo: OscillatorNode
     lfoGain: GainNode
+    loopId: number
   }
   | null = null
 
@@ -183,6 +184,61 @@ function playNoiseBurst(duration = 0.12, gain = 0.03, filterFrequency = 900) {
   source.stop(startTime + duration)
 }
 
+function playMusicNote(
+  frequency: number,
+  startDelay: number,
+  duration: number,
+  gain = 0.028,
+) {
+  const audioContext = getAudioContext()
+
+  if (!audioContext) {
+    return
+  }
+
+  const startTime = audioContext.currentTime + startDelay
+  const oscillator = audioContext.createOscillator()
+  const overtone = audioContext.createOscillator()
+  const gainNode = audioContext.createGain()
+  const filterNode = audioContext.createBiquadFilter()
+  const delayNode = audioContext.createDelay(0.7)
+  const delayGain = audioContext.createGain()
+
+  oscillator.type = 'triangle'
+  oscillator.frequency.setValueAtTime(frequency, startTime)
+  overtone.type = 'sine'
+  overtone.frequency.setValueAtTime(frequency * 2.01, startTime)
+  filterNode.type = 'lowpass'
+  filterNode.frequency.setValueAtTime(1600, startTime)
+  delayNode.delayTime.setValueAtTime(0.24, startTime)
+  delayGain.gain.setValueAtTime(gain * 0.32, startTime)
+  gainNode.gain.setValueAtTime(0.0001, startTime)
+  gainNode.gain.exponentialRampToValueAtTime(gain, startTime + 0.035)
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+  oscillator.connect(filterNode)
+  overtone.connect(filterNode)
+  filterNode.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+  gainNode.connect(delayNode)
+  delayNode.connect(delayGain)
+  delayGain.connect(audioContext.destination)
+  oscillator.start(startTime)
+  overtone.start(startTime)
+  oscillator.stop(startTime + duration + 0.08)
+  overtone.stop(startTime + duration + 0.08)
+}
+
+function playAmbientPhrase() {
+  const melody = [261.63, 311.13, 392, 369.99, 311.13, 233.08]
+
+  melody.forEach((frequency, index) => {
+    playMusicNote(frequency, index * 0.46, index === 2 ? 0.72 : 0.42, index === 2 ? 0.032 : 0.024)
+  })
+  playMusicNote(130.81, 0, 2.1, 0.014)
+  playMusicNote(196, 1.45, 1.2, 0.012)
+}
+
 function startAmbientSound() {
   const audioContext = getAudioContext()
 
@@ -196,16 +252,15 @@ function startAmbientSound() {
   const lfoGain = audioContext.createGain()
   const startTime = audioContext.currentTime
   const droneDefinitions: Array<{ frequency: number; type: OscillatorType; detune: number }> = [
-    { frequency: 55, type: 'sine', detune: -8 },
-    { frequency: 82.41, type: 'sine', detune: 6 },
-    { frequency: 146.83, type: 'triangle', detune: -12 },
+    { frequency: 65.41, type: 'sine', detune: -8 },
+    { frequency: 98, type: 'sine', detune: 6 },
   ]
 
   filterNode.type = 'lowpass'
-  filterNode.frequency.setValueAtTime(520, startTime)
+  filterNode.frequency.setValueAtTime(680, startTime)
   filterNode.Q.setValueAtTime(0.7, startTime)
   gainNode.gain.setValueAtTime(0.0001, startTime)
-  gainNode.gain.linearRampToValueAtTime(0.014, startTime + 1.8)
+  gainNode.gain.linearRampToValueAtTime(0.009, startTime + 1.8)
 
   lfo.type = 'sine'
   lfo.frequency.setValueAtTime(0.045, startTime)
@@ -228,7 +283,9 @@ function startAmbientSound() {
   filterNode.connect(gainNode)
   gainNode.connect(audioContext.destination)
   lfo.start(startTime)
-  ambientSound = { oscillators, filterNode, gainNode, lfo, lfoGain }
+  playAmbientPhrase()
+  const loopId = window.setInterval(playAmbientPhrase, 3600)
+  ambientSound = { oscillators, filterNode, gainNode, lfo, lfoGain, loopId }
 }
 
 function playButtonSound() {
@@ -237,15 +294,20 @@ function playButtonSound() {
 }
 
 function playOnboardingSound() {
-  playTone(196, 0, 0.55, { type: 'sine', gain: 0.025, filterFrequency: 700 })
-  playTone(293.66, 0.06, 0.52, { type: 'sine', gain: 0.018, detune: -8, filterFrequency: 1000 })
-  playTone(739.99, 0.16, 0.38, { type: 'triangle', gain: 0.012, filterFrequency: 1900 })
+  playNoiseBurst(0.1, 0.01, 1600)
+  playTone(196, 0, 0.55, { type: 'sine', gain: 0.028, filterFrequency: 700 })
+  playTone(293.66, 0.08, 0.52, { type: 'sine', gain: 0.022, detune: -8, filterFrequency: 1000 })
+  playTone(392, 0.2, 0.5, { type: 'triangle', gain: 0.018, filterFrequency: 1400 })
+  playTone(987.77, 0.44, 0.16, { type: 'sine', gain: 0.014, filterFrequency: 2600 })
 }
 
 function playBootSound() {
-  playNoiseBurst(0.16, 0.018, 720)
-  playTone(110, 0, 0.22, { type: 'sawtooth', gain: 0.016, filterFrequency: 420 })
-  playTone(440, 0.1, 0.18, { type: 'square', gain: 0.008, filterFrequency: 1600 })
+  playNoiseBurst(0.18, 0.026, 920)
+  playTone(92, 0, 0.24, { type: 'sawtooth', gain: 0.018, filterFrequency: 420 })
+  playTone(220, 0.12, 0.16, { type: 'square', gain: 0.014, filterFrequency: 1200 })
+  playTone(440, 0.24, 0.14, { type: 'square', gain: 0.012, filterFrequency: 1800 })
+  playTone(880, 0.36, 0.22, { type: 'triangle', gain: 0.018, filterFrequency: 2600 })
+  playNoiseBurst(0.08, 0.014, 2200)
 }
 
 function playQrFoundSound() {
