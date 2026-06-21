@@ -888,6 +888,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [adminError, setAdminError] = useState('')
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
   const [isResettingTeams, setIsResettingTeams] = useState(false)
+  const [resettingTeamCode, setResettingTeamCode] = useState<string | null>(null)
 
   const loadTeams = async (showLoading = false) => {
     if (showLoading) {
@@ -967,6 +968,29 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const handleManualRefresh = () => {
     void loadTeams(true)
+  }
+
+  const handleResetTeam = async (teamName: TeamOption) => {
+    const teamCode = getTeamCodeForOption(teamName)
+
+    if (!window.confirm(`${teamName} 진행상황을 초기화합니다. 해당 조 기기는 조 선택 화면으로 돌아갑니다.`)) {
+      return
+    }
+
+    setResettingTeamCode(teamCode)
+
+    const { error } = await supabase
+      .from('teams')
+      .upsert(createResetTeamPayload(teamName), { onConflict: 'team_code' })
+
+    if (error) {
+      setAdminError(`${teamName} 초기화에 실패했습니다. Supabase 권한을 확인해주세요.`)
+    } else {
+      setAdminError('')
+      await loadTeams(false)
+    }
+
+    setResettingTeamCode(null)
   }
 
   if (!adminUnlocked) {
@@ -1109,6 +1133,16 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
                       {row.hint_count}
                     </strong>
                   </div>
+                </div>
+                <div className="admin-team-actions">
+                  <button
+                    type="button"
+                    className="admin-reset-team-button"
+                    onClick={() => void handleResetTeam(teamOption)}
+                    disabled={resettingTeamCode === row.team_code}
+                  >
+                    {resettingTeamCode === row.team_code ? '초기화 중' : `${row.team_name} 초기화`}
+                  </button>
                 </div>
                     </>
                   )
