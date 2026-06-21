@@ -13,7 +13,7 @@ const qrCodes = [
   { id: '04', place: '소예배실', value: 'ARCHIVE-04-NEXT', filename: 'archive-04-small-chapel.svg' },
   { id: '05', place: '2층 복도', value: 'ARCHIVE-05-NEXT', filename: 'archive-05-second-floor-hallway.svg' },
   { id: '06', place: '3층', value: 'ARCHIVE-06-NEXT', filename: 'archive-06-third-floor.svg' },
-  { id: '07', place: '야외캠핑장', value: 'ARCHIVE-07-NEXT', filename: 'archive-07-outdoor-camp.svg' },
+  { id: '07', place: '야외 정자', value: 'ARCHIVE-07-NEXT', filename: 'archive-07-outdoor-camp.svg' },
 ]
 
 const outputDirectory = new URL('../public/qr/', import.meta.url)

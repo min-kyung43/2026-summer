@@ -449,10 +449,13 @@
 .team-select-screen {
   position: relative;
   z-index: 1;
-  min-height: 100%;
+  height: 100%;
+  min-height: 100svh;
   display: flex;
   align-items: flex-end;
-  padding: 0 0 64px;
+  padding: clamp(72px, 18svh, 180px) 0 clamp(28px, 7svh, 64px);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .team-select-screen::before {
@@ -474,6 +477,7 @@
 .team-select-panel {
   position: relative;
   width: 100%;
+  margin-top: auto;
 }
 
 .team-select-kicker {
@@ -2083,6 +2087,17 @@
   padding-inline: 18px;
 }
 
+.problem-final-instruction {
+  margin: 0;
+  color: rgba(247, 251, 255, 0.9);
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: right;
+  word-break: keep-all;
+}
+
 .qr-scan-panel {
   position: relative;
   z-index: 3;
@@ -2604,24 +2619,39 @@
   white-space: nowrap;
 }
 
+.admin-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.admin-refresh-button,
 .admin-reset-all-button {
   width: 100%;
   min-height: 46px;
-  margin: 18px 0 0;
-  border: 1px solid rgba(240, 197, 197, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   color: rgba(247, 251, 255, 0.9);
   font-family: var(--font-story);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   background:
-    radial-gradient(circle at 86% 12%, rgba(240, 197, 197, 0.12), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(157, 223, 255, 0.1), transparent 34%),
     rgba(255, 255, 255, 0.04);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
+.admin-reset-all-button {
+  border-color: rgba(240, 197, 197, 0.24);
+  background:
+    radial-gradient(circle at 86% 12%, rgba(240, 197, 197, 0.12), transparent 34%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.admin-refresh-button:disabled,
 .admin-reset-all-button:disabled {
   color: var(--text-muted);
   opacity: 0.58;
@@ -3043,9 +3073,12 @@
     align-items: flex-start;
   }
 
-  .team-select-screen,
   .archive-screen {
     min-height: 844px;
+  }
+
+  .team-select-screen {
+    min-height: 100svh;
   }
 
   .boot-screen {
@@ -3063,6 +3096,38 @@
 }
 
 @media (max-height: 760px) {
+  .team-select-screen {
+    padding-top: clamp(44px, 9svh, 78px);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .team-select-kicker {
+    margin-bottom: 8px;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .team-select-title {
+    font-size: 26px;
+    line-height: 1.18;
+  }
+
+  .team-select-description {
+    margin: 8px 0 18px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .team-option-grid {
+    gap: 9px;
+  }
+
+  .team-option-button {
+    min-height: 49px;
+    border-radius: 15px;
+    font-size: 15px;
+  }
+
   .fake-qr-home-button {
     top: max(46px, calc(env(safe-area-inset-top) + 34px));
     min-width: 74px;

@@ -62,7 +62,7 @@ const archives = [
   { id: '04', name: '소예배실', status: '잠금', locked: true },
   { id: '05', name: '2층 복도', status: '잠금', locked: true },
   { id: '06', name: '3층', status: '잠금', locked: true },
-  { id: '07', name: '야외캠핑장', status: '잠금', locked: true },
+  { id: '07', name: '야외 정자', status: '잠금', locked: true },
 ] as const
 
 const teamOptions = ['1조', '2조', '3조', '4조', '5조'] as const
@@ -716,6 +716,10 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
     setIsResettingTeams(false)
   }
 
+  const handleManualRefresh = () => {
+    void loadTeams(true)
+  }
+
   if (!adminUnlocked) {
     return (
       <main className="admin-shell">
@@ -752,16 +756,26 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
             <p className="admin-kicker">RESTORED ARCHIVE MONITOR</p>
             <h1 className="admin-title">관리자 진행 현황</h1>
           </div>
-          <p className="admin-timestamp">{syncLabel}</p>
+          <p className="admin-timestamp">{syncLabel} · AUTO 5S</p>
         </header>
-        <button
-          type="button"
-          className="admin-reset-all-button"
-          onClick={handleResetAllTeams}
-          disabled={isResettingTeams}
-        >
-          {isResettingTeams ? '초기화 중' : '전체 기기 초기화'}
-        </button>
+        <div className="admin-action-row">
+          <button
+            type="button"
+            className="admin-refresh-button"
+            onClick={handleManualRefresh}
+            disabled={isLoadingTeams}
+          >
+            {isLoadingTeams ? '동기화 중' : '수동 새로고침'}
+          </button>
+          <button
+            type="button"
+            className="admin-reset-all-button"
+            onClick={handleResetAllTeams}
+            disabled={isResettingTeams}
+          >
+            {isResettingTeams ? '초기화 중' : '전체 기기 초기화'}
+          </button>
+        </div>
 
         <div className="admin-summary" aria-label="팀 진행 요약">
           <div className="admin-summary-item">
@@ -1639,7 +1653,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if ('puzzleType' in currentProblem && currentProblem.puzzleType === 'alphabetMix') {
       return (
         <div className="cipher-card alphabet-cipher-card" aria-label="알파벳 조합 문제">
-          {['N', 'E', 'W', 'W', 'O', 'R', 'D'].map((letter, index) => (
+          {['N', 'E', 'W', 'D', 'O', 'O', 'R'].map((letter, index) => (
             <span key={`letter-${letter}-${index + 1}`}>{letter}</span>
           ))}
         </div>
@@ -2250,13 +2264,17 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
                   />
                 ))}
               </div>
-              <button
-                type="button"
-                className="problem-pill-button is-bright"
-                onClick={handleNextSignal}
-              >
-                {challengeIndex >= problemStages.length ? '여정 완료' : '대시보드로 이동'}
-              </button>
+              {challengeIndex >= problemStages.length ? (
+                <p className="problem-final-instruction">본당으로 이동하세요.</p>
+              ) : (
+                <button
+                  type="button"
+                  className="problem-pill-button is-bright"
+                  onClick={handleNextSignal}
+                >
+                  대시보드로 이동
+                </button>
+              )}
             </div>
           </section>
         )}
