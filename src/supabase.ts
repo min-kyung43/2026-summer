@@ -12,11 +12,19 @@ export type TeamRecord = {
   finished_at: string | null
 }
 
-const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL
-const supabasePublishableKey = import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+function normalizeSupabaseUrl(url: string) {
+  return url.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '')
+}
 
-if (!supabaseUrl || !supabasePublishableKey) {
+const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  ?? import.meta.env.NEXT_PUBLIC_SUPABASE_URL
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  ?? import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+if (!rawSupabaseUrl || !supabasePublishableKey) {
   throw new Error('Supabase 환경변수가 설정되지 않았습니다.')
 }
+
+const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl)
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey)

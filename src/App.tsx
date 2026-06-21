@@ -645,7 +645,8 @@ function loadStoredSession(): Partial<AppSession> {
 
 function isAdminUnlocked() {
   try {
-    return window.sessionStorage.getItem(adminUnlockStorageKey) === 'true'
+    return window.location.pathname === '/admin'
+      || window.sessionStorage.getItem(adminUnlockStorageKey) === 'true'
   } catch {
     return false
   }
