@@ -184,6 +184,13 @@ function playNoiseBurst(duration = 0.12, gain = 0.03, filterFrequency = 900) {
   source.stop(startTime + duration)
 }
 
+function playStaticGlitch(intensity = 1) {
+  playNoiseBurst(0.055, 0.022 * intensity, 1800)
+  playNoiseBurst(0.035, 0.014 * intensity, 3600)
+  playTone(740, 0.012, 0.045, { type: 'square', gain: 0.008 * intensity, filterFrequency: 2400 })
+  playTone(1180, 0.046, 0.032, { type: 'sawtooth', gain: 0.006 * intensity, filterFrequency: 3200 })
+}
+
 function playMusicNote(
   frequency: number,
   startDelay: number,
@@ -302,12 +309,13 @@ function playOnboardingSound() {
 }
 
 function playBootSound() {
-  playNoiseBurst(0.18, 0.026, 920)
+  playStaticGlitch(1.15)
+  playNoiseBurst(0.18, 0.02, 920)
   playTone(92, 0, 0.24, { type: 'sawtooth', gain: 0.018, filterFrequency: 420 })
   playTone(220, 0.12, 0.16, { type: 'square', gain: 0.014, filterFrequency: 1200 })
   playTone(440, 0.24, 0.14, { type: 'square', gain: 0.012, filterFrequency: 1800 })
   playTone(880, 0.36, 0.22, { type: 'triangle', gain: 0.018, filterFrequency: 2600 })
-  playNoiseBurst(0.08, 0.014, 2200)
+  playStaticGlitch(0.7)
 }
 
 function playQrFoundSound() {
@@ -1341,6 +1349,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     const timers = bootLines.map((_, index) =>
       window.setTimeout(() => {
         setVisibleBootLines(index + 1)
+        playStaticGlitch(index === bootLines.length - 1 ? 1.2 : 0.82)
       }, 500 + index * 700),
     )
 
@@ -1886,8 +1895,8 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         [['1️⃣'], ['='], ['5️⃣']],
         [['2️⃣'], ['='], ['2️⃣']],
         [['3️⃣'], ['='], ['2️⃣']],
-        [['5️⃣'], ['='], ['2️⃣']],
         [['4️⃣'], ['='], ['3️⃣']],
+        [['5️⃣'], ['='], ['2️⃣']],
         [['6️⃣'], ['='], ['1️⃣']],
         [['7️⃣'], ['='], ['3️⃣']],
         [['8️⃣'], ['='], ['？']],
