@@ -737,9 +737,28 @@ function getArchiveQrValue(archiveId: string) {
 }
 
 function getFakeQrIdFromValue(value: string) {
-  const match = value.trim().match(/^FAKE-QR-(\d{2})$/)
+  const trimmedValue = value.trim()
+  const directMatch = trimmedValue.match(/^FAKE-QR-(\d{1,2})$/i)
 
-  return match ? match[1] : null
+  if (directMatch) {
+    return directMatch[1].padStart(2, '0')
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedValue)
+    const fakeQrParam = parsedUrl.searchParams.get('fakeQr')
+    const paramMatch = fakeQrParam?.match(/^\d{1,2}$/)
+
+    if (fakeQrParam && paramMatch) {
+      return fakeQrParam.padStart(2, '0')
+    }
+  } catch {
+    // Non-URL QR values are handled by the direct match above.
+  }
+
+  const looseMatch = trimmedValue.match(/fake[-_\s]?qr[-_\s]?(\d{1,2})/i)
+
+  return looseMatch ? looseMatch[1].padStart(2, '0') : null
 }
 
 function getProblemAnswers(problem: (typeof problemStages)[number]) {
@@ -1191,6 +1210,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
   const secretAdminTapTimerRef = useRef<number | null>(null)
   const qrAdminBypassTimerRef = useRef<number | null>(null)
   const qrAdminBypassTriggeredRef = useRef(false)
+  const qrScanResolvedRef = useRef(false)
   const missionFailedTapCountRef = useRef(0)
 
   useEffect(() => {
@@ -1295,6 +1315,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         setVisibleBootLines(0)
         setQrScannerStatus('idle')
         setQrScannerMessage('')
+        qrScanResolvedRef.current = false
         return
       }
 
@@ -1337,6 +1358,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     if (phase === 'step-intro') {
       setQrScannerStatus('idle')
       setQrScannerMessage('')
+      qrScanResolvedRef.current = false
     }
   }, [phase])
 
@@ -1445,6 +1467,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setVisibleBootLines(0)
     setQrScannerStatus('idle')
     setQrScannerMessage('')
+    qrScanResolvedRef.current = false
     setIsTeamSelectLoading(false)
     setIsResetDialogOpen(false)
   }
@@ -1564,6 +1587,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
+    qrScanResolvedRef.current = false
     setPhase('step-intro')
   }
 
@@ -1675,6 +1699,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     setPuzzleFeedback('')
     setQrScannerStatus('idle')
     setQrScannerMessage('')
+    qrScanResolvedRef.current = false
     setPhase('archive-home')
   }
 
@@ -1733,6 +1758,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       }
 
       qrScannerControlsRef.current?.stop()
+      qrScanResolvedRef.current = false
       setQrScannerStatus('scanning')
       setQrScannerMessage('QR 신호를 찾고 있습니다.')
 
@@ -1748,7 +1774,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         },
         video,
         (result) => {
-          if (!result || qrScannerControlsRef.current === null) {
+          if (!result || qrScannerControlsRef.current === null || qrScanResolvedRef.current) {
             return
           }
 
@@ -1756,8 +1782,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
           const fakeQrId = getFakeQrIdFromValue(scannedValue)
 
           if (fakeQrId) {
+            qrScanResolvedRef.current = true
             qrScannerControlsRef.current.stop()
             qrScannerControlsRef.current = null
+            setQrScannerStatus('found')
+            setQrScannerMessage('가짜 QR 신호가 감지되었습니다.')
             playPuzzleFailureSound()
             window.location.href = `/?fakeQr=${fakeQrId}`
             return
@@ -1765,11 +1794,11 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
 
           if (scannedValue !== getArchiveQrValue(currentProblem.archiveId)) {
             playPuzzleFailureSound()
-            setQrScannerStatus('error')
             setQrScannerMessage(`${currentArchive.name} QR만 인식할 수 있습니다.`)
             return
           }
 
+          qrScanResolvedRef.current = true
           qrScannerControlsRef.current.stop()
           qrScannerControlsRef.current = null
           setQrScannerStatus('found')
@@ -1783,6 +1812,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     } catch {
       qrScannerControlsRef.current?.stop()
       qrScannerControlsRef.current = null
+      qrScanResolvedRef.current = false
       setQrScannerStatus('error')
       setQrScannerMessage('카메라 권한을 허용한 뒤 다시 시도해주세요.')
       playPuzzleFailureSound()
@@ -1802,6 +1832,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
     qrAdminBypassTimerRef.current = window.setTimeout(() => {
       qrAdminBypassTimerRef.current = null
       qrAdminBypassTriggeredRef.current = true
+      qrScanResolvedRef.current = true
       qrScannerControlsRef.current?.stop()
       qrScannerControlsRef.current = null
       setQrScannerStatus('found')
@@ -1856,7 +1887,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
         [['2️⃣'], ['='], ['2️⃣']],
         [['3️⃣'], ['='], ['2️⃣']],
         [['5️⃣'], ['='], ['2️⃣']],
-        [['5️⃣'], ['='], ['2️⃣']],
+        [['4️⃣'], ['='], ['3️⃣']],
         [['6️⃣'], ['='], ['1️⃣']],
         [['7️⃣'], ['='], ['3️⃣']],
         [['8️⃣'], ['='], ['？']],
