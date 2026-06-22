@@ -2385,26 +2385,10 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <section className="home-card hint-card reveal-soft">
                 <p className="home-card-label">HINT USAGE</p>
                 <p className="home-progress-value">
-                  {activeTeam?.hint_count ?? 0}
+                  {activeTeam?.hint_count ?? 0} <span>/ {maxHintCount}</span>
                 </p>
                 <p className="home-card-title">사용한 힌트</p>
               </section>
-
-              <button
-                type="button"
-                className="home-card hint-start-card reveal-soft"
-                onClick={() => handleArchiveOpen(currentProblem.archiveId)}
-              >
-                <span className="home-card-label">NEXT ACTION</span>
-                <span className="hint-card-title">
-                  {hasCompletedJourney ? `${finalDestination}으로 이동` : `${currentArchive.name}으로 이동`}
-                </span>
-                <span className="hint-card-copy">
-                  {hasCompletedJourney
-                    ? '모든 기록이 복구되었습니다. 본당으로 돌아가십시오.'
-                    : `${currentProblem.title} 기록을 복구하려면 현장 QR 신호를 스캔하십시오.`}
-                </span>
-              </button>
             </div>
 
             <nav className="home-bottom-nav reveal-soft" aria-label="하단 메뉴">
