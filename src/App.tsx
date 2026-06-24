@@ -791,10 +791,10 @@ function getBibleStepQuestion(step: number) {
   }
 
   if (step === 2) {
-    return '최종 암호 코드 = (B-A×C)+D+A 값을 입력하십시오.'
+    return '최종 암호 코드 = (B-A×C)+D+A 값을 입력하십시오. 이 값은 다음 단계의 장 번호가 됩니다.'
   }
 
-  return '예레미야 35장 19절의 빈칸 [ ? ]에 들어갈 말씀을 띄어쓰기 없이 입력하십시오.'
+  return '2단계에서 얻은 암호 코드를 장 번호로 사용해, 예레미야 [암호 코드]장 19절의 빈칸 [ ? ]에 들어갈 말씀을 입력하십시오.'
 }
 
 function getBibleStepHint(step: number) {
@@ -2014,6 +2014,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
               <strong>(B-A×C)+D+A</strong>
               <em>= ?</em>
             </div>
+            <div className="bible-formula">계산된 암호 코드는 다음 단계의 장 번호가 됩니다.</div>
           </div>
         )
       }
@@ -2021,6 +2022,7 @@ function OnboardingApp({ onAdminOpen }: OnboardingAppProps) {
       return (
         <div className="cipher-card bible-cipher-card" aria-label="성경 암호 3단계">
           <p className="bible-step-label">STEP 3 / 3 · 최종 구절</p>
+          <div className="bible-formula">예레미야 [2단계 암호 코드]장 19절</div>
           <p className="bible-verse-line">
             그러므로 만군의 <strong>[ ? ]</strong>의 하나님께서 이와 같이 말씀하시니라
           </p>
