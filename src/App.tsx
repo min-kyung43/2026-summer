@@ -402,7 +402,7 @@ const problemStages = [
       '모든 단서를 조합하여 완전한 암호를 찾아야 한다.',
     ],
     questionLabel: '문제',
-    question: '검은 원 5개가 완성되는 5자리 암호를 입력하십시오.',
+    question: '흰 원은 맞는 숫자의 개수를, 검은 원은 숫자와 위치가 모두 맞는 것을 의미한다. 검은 원 5개가 완성되는 5자리 암호를 입력하십시오.',
     answer: circleCoordinateAnswer,
     clueTitle: '문제를 풀었을 때 얻는 단서',
     clue: '따뜻한 온기와 사람들의 흔적이 남아 있는 곳. 수많은 만남이 지나간 장소.',
