@@ -59,7 +59,7 @@ const archives = [
   { id: '01', name: '본당', status: '복구 가능', locked: false },
   { id: '02', name: '수영장', status: '잠금', locked: true },
   { id: '03', name: '식당', status: '잠금', locked: true },
-  { id: '04', name: '소예배실', status: '잠금', locked: true },
+  { id: '04', name: '탁구장', status: '잠금', locked: true },
   { id: '05', name: '2층 복도', status: '잠금', locked: true },
   { id: '06', name: '3층', status: '잠금', locked: true },
   { id: '07', name: '야외 정자', status: '잠금', locked: true },

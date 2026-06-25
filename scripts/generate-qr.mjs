@@ -10,7 +10,7 @@ const qrCodes = [
   { id: '01', place: '본당', value: 'ARCHIVE-01-NEXT', filename: 'archive-01-main-hall.svg' },
   { id: '02', place: '수영장', value: 'ARCHIVE-02-NEXT', filename: 'archive-02-pool.svg' },
   { id: '03', place: '식당', value: 'ARCHIVE-03-NEXT', filename: 'archive-03-dining-room.svg' },
-  { id: '04', place: '소예배실', value: 'ARCHIVE-04-NEXT', filename: 'archive-04-small-chapel.svg' },
+  { id: '04', place: '탁구장', value: 'ARCHIVE-04-NEXT', filename: 'archive-04-small-chapel.svg' },
   { id: '05', place: '2층 복도', value: 'ARCHIVE-05-NEXT', filename: 'archive-05-second-floor-hallway.svg' },
   { id: '06', place: '3층', value: 'ARCHIVE-06-NEXT', filename: 'archive-06-third-floor.svg' },
   { id: '07', place: '야외 정자', value: 'ARCHIVE-07-NEXT', filename: 'archive-07-outdoor-camp.svg' },
