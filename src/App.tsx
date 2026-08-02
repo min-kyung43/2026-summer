@@ -959,6 +959,23 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
     let isMounted = true
 
     void loadTeams(true)
+    const realtimeChannel = supabase
+      .channel('admin-teams-live')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'teams',
+        },
+        () => {
+          if (isMounted) {
+            void loadTeams(false)
+          }
+        },
+      )
+      .subscribe()
+
     const syncTimer = window.setInterval(() => {
       if (isMounted) {
         void loadTeams(false)
@@ -968,6 +985,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps) {
     return () => {
       isMounted = false
       window.clearInterval(syncTimer)
+      void supabase.removeChannel(realtimeChannel)
     }
   }, [adminUnlocked])
 

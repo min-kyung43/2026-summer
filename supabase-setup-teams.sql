@@ -43,6 +43,19 @@ with check (
   team_code in ('TEAM01', 'TEAM02', 'TEAM03', 'TEAM04', 'TEAM05')
 );
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'teams'
+  ) then
+    alter publication supabase_realtime add table public.teams;
+  end if;
+end $$;
+
 insert into public.teams (
   team_name,
   team_code,
