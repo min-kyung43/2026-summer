@@ -6,10 +6,10 @@ import { supabase, type TeamRecord } from './supabase'
 const storySlides = [
   {
     lead: '몇 년 전...',
-    body: ['장성교회 청년부의 청년들이', '갑자기 사라졌다.'],
+    body: ['장성교회 청소년부의 학생들이', '갑자기 사라졌다.'],
   },
   {
-    lead: '청년들이 남긴 마지막 기록에는',
+    lead: '학생들이 남긴 마지막 기록에는',
     body: ['반복되는 한 문장이 있었다.'],
     quote: '“ 빛이 ... 사라지고 있다 ... “',
   },
